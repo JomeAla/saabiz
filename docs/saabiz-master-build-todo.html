@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAABIZ - Master Build To-Do List</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+h1, h2, h3 { color: #111; }
+.section { margin-bottom: 50px; }
+.phase { background: #f4f6f8; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+.critical { color: #b30000; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>SAABIZ</h1>
+<h2>Master Build To-Do List (NestJS + Next.js + Docker + Contabo)</h2>
+
+<div class="section">
+<h2>PHASE 0 – Planning & Architecture</h2>
+<ul>
+<li>Define final domain name</li>
+<li>Design high-level microservices diagram</li>
+<li>Define service boundaries (Payment, Licensing, Subscription, Affiliate, etc.)</li>
+<li>Define database schema architecture</li>
+<li>Design event-driven communication plan (Redis or internal REST)</li>
+<li>Define API versioning strategy</li>
+<li>Define environment variables structure</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 1 – Project Setup (Monorepo)</h2>
+<ul>
+<li>Initialize monorepo (Nx or Turbo recommended)</li>
+<li>Create NestJS backend workspace</li>
+<li>Create Next.js frontend workspace</li>
+<li>Configure TypeScript strict mode</li>
+<li>Setup ESLint + Prettier</li>
+<li>Setup Husky pre-commit hooks</li>
+<li>Configure .env management</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 2 – Core Infrastructure Services</h2>
+
+<h3>Database</h3>
+<ul>
+<li>Install PostgreSQL</li>
+<li>Design core tables (users, sellers, products, plans, subscriptions, licenses, transactions, affiliates)</li>
+<li>Setup Prisma or TypeORM</li>
+<li>Run migrations</li>
+</ul>
+
+<h3>Redis</h3>
+<ul>
+<li>Install Redis container</li>
+<li>Configure Redis caching module</li>
+<li>Implement license validation cache strategy</li>
+</ul>
+
+<h3>MinIO</h3>
+<ul>
+<li>Deploy MinIO container</li>
+<li>Configure secure buckets</li>
+<li>Implement signed URL generation</li>
+</ul>
+
+</div>
+
+<div class="section">
+<h2>PHASE 3 – Authentication & Identity</h2>
+<ul>
+<li>Create Auth module (JWT-based)</li>
+<li>Implement user registration/login</li>
+<li>Implement Seller role</li>
+<li>Implement Affiliate role</li>
+<li>Implement Admin role</li>
+<li>Implement role-based access control (RBAC)</li>
+<li>Password reset flow</li>
+<li>Email verification flow</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 4 – Seller Management Module</h2>
+<ul>
+<li>Create seller profile entity</li>
+<li>Implement seller onboarding flow</li>
+<li>Connect seller payout details (Paystack, Flutterwave, Stripe)</li>
+<li>Build seller KYC placeholder structure</li>
+<li>Implement seller settings dashboard API</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 5 – Product & Plan Management</h2>
+<ul>
+<li>Create Product entity</li>
+<li>Create Pricing Plan entity</li>
+<li>Support one-time pricing</li>
+<li>Support monthly subscriptions</li>
+<li>Support annual subscriptions</li>
+<li>Support free trial configuration</li>
+<li>Support freemium flag</li>
+<li>Implement add-ons/extensions</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 6 – Payment Gateway Orchestrator</h2>
+
+<h3>Integrations</h3>
+<ul>
+<li>Integrate Paystack</li>
+<li>Integrate Flutterwave</li>
+<li>Integrate Stripe</li>
+<li>Enable Apple Pay & Google Pay (Stripe)</li>
+<li>Enable PayPal routing via Flutterwave</li>
+</ul>
+
+<h3>Payment Logic</h3>
+<ul>
+<li>Build geo-based routing engine</li>
+<li>Implement fallback gateway logic</li>
+<li>Implement revenue split calculation</li>
+<li>Implement webhook listener per gateway</li>
+<li>Implement idempotency protection</li>
+<li>Store transaction records</li>
+</ul>
+
+</div>
+
+<div class="section">
+<h2>PHASE 7 – Tax & Compliance</h2>
+<ul>
+<li>Integrate TaxJar/Avalara/Quaderno</li>
+<li>Implement US Sales Tax logic</li>
+<li>Implement UK VAT logic</li>
+<li>Implement EU VAT logic</li>
+<li>Generate tax-compliant invoices</li>
+<li>Store tax records</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 8 – Subscription Engine</h2>
+<ul>
+<li>Implement subscription state machine</li>
+<li>Implement renewals logic</li>
+<li>Implement upgrade logic</li>
+<li>Implement downgrade logic</li>
+<li>Implement proration engine</li>
+<li>Implement cancellation logic</li>
+<li>Implement grace period logic</li>
+<li>Implement dunning retries</li>
+<li>Sync subscription updates via webhooks</li>
+</ul>
+<p class="critical">Must be idempotent and transaction-safe.</p>
+</div>
+
+<div class="section">
+<h2>PHASE 9 – Licensing & Distribution Engine</h2>
+<ul>
+<li>Create License entity</li>
+<li>Implement secure license key generation</li>
+<li>Hash and store licenses</li>
+<li>Create real-time validation API</li>
+<li>Implement activation limits (1-site, unlimited)</li>
+<li>Implement feature flags</li>
+<li>Integrate Redis caching for validation</li>
+<li>Implement OTA update endpoint</li>
+<li>Generate signed download URLs</li>
+<li>Deploy behind CDN</li>
+</ul>
+<p class="critical">Must achieve 99.99% uptime.</p>
+</div>
+
+<div class="section">
+<h2>PHASE 10 – Checkout System</h2>
+
+<h3>Hosted Checkout</h3>
+<ul>
+<li>Build Next.js checkout page</li>
+<li>Implement multi-currency display</li>
+<li>Implement gateway routing logic</li>
+<li>Optimize conversion UI</li>
+</ul>
+
+<h3>Embedded Checkout</h3>
+<ul>
+<li>Create Checkout.js script</li>
+<li>Implement tokenized payment submission</li>
+<li>Provide styling configuration</li>
+<li>Document integration steps</li>
+</ul>
+
+</div>
+
+<div class="section">
+<h2>PHASE 11 – Customer Portal</h2>
+<ul>
+<li>Build login system</li>
+<li>Display active subscriptions</li>
+<li>Allow upgrade/downgrade</li>
+<li>Allow payment method update</li>
+<li>Allow software downloads</li>
+<li>Display invoices</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 12 – Affiliate System</h2>
+<ul>
+<li>Create Affiliate entity</li>
+<li>Generate referral links</li>
+<li>Track referral attribution</li>
+<li>Calculate commissions</li>
+<li>Build affiliate dashboard</li>
+<li>Implement affiliate payouts</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 13 – Analytics & Reporting</h2>
+<ul>
+<li>Calculate MRR</li>
+<li>Calculate churn rate</li>
+<li>Calculate LTV</li>
+<li>Track refund rate</li>
+<li>Build seller analytics dashboard</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 14 – Webhooks & Events</h2>
+<ul>
+<li>Create internal event bus</li>
+<li>Emit subscription.created</li>
+<li>Emit payment.failed</li>
+<li>Emit license.expired</li>
+<li>Allow external webhook registration</li>
+<li>Secure webhook signature verification</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 15 – SDK Development</h2>
+<ul>
+<li>Create PHP SDK</li>
+<li>Create WordPress SDK</li>
+<li>Create JavaScript SDK</li>
+<li>Document API usage</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 16 – Dockerization</h2>
+<ul>
+<li>Create Dockerfile for backend</li>
+<li>Create Dockerfile for frontend</li>
+<li>Create Dockerfile for licensing service</li>
+<li>Create docker-compose.yml</li>
+<li>Setup Nginx reverse proxy container</li>
+<li>Configure environment variables</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 17 – Contabo Deployment</h2>
+<ul>
+<li>Purchase Contabo VPS (8GB recommended)</li>
+<li>Install Docker + Docker Compose</li>
+<li>Setup firewall</li>
+<li>Deploy containers</li>
+<li>Configure domain DNS</li>
+<li>Setup Nginx reverse proxy</li>
+<li>Install Let’s Encrypt SSL</li>
+<li>Test production build</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 18 – CI/CD</h2>
+<ul>
+<li>Setup GitHub repository</li>
+<li>Configure GitHub Actions</li>
+<li>Auto-build Docker images</li>
+<li>Push to Docker registry</li>
+<li>Deploy via SSH automation</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 19 – Monitoring & Scaling</h2>
+<ul>
+<li>Setup uptime monitoring</li>
+<li>Setup logging (Winston + centralized logs)</li>
+<li>Setup error tracking (Sentry)</li>
+<li>Monitor CPU & RAM usage</li>
+<li>Implement horizontal scaling plan</li>
+<li>Prepare Docker Swarm migration plan</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>PHASE 20 – Security Hardening</h2>
+<ul>
+<li>Enable rate limiting</li>
+<li>Enable CORS policies</li>
+<li>Secure headers</li>
+<li>Encrypt sensitive data</li>
+<li>Implement audit logging</li>
+<li>Test role permissions</li>
+<li>Penetration testing checklist</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>FINAL VALIDATION CHECKLIST</h2>
+<ul>
+<li>All payment gateways tested</li>
+<li>All webhook flows validated</li>
+<li>Subscription edge cases tested</li>
+<li>License validation load tested</li>
+<li>Refund flow tested</li>
+<li>Affiliate payout flow tested</li>
+<li>Deployment reproducible</li>
+<li>Backups configured</li>
+</ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "@saabiz/source",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@nx/js": "20.4.6",
+    "@nx/nest": "20.4.6",
+    "@nx/next": "20.4.6",
+    "@nx/node": "20.4.6",
+    "@nx/workspace": "20.4.6",
+    "nx": "20.4.6",
+    "prisma": "^5.0.0",
+    "typescript": "~5.5.2"
+  }
+}

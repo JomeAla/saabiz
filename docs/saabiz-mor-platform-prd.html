@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAABIZ - Merchant of Record & Monetization Platform PRD</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+h1, h2, h3, h4 { color: #111; }
+.section { margin-bottom: 50px; }
+.phase { background: #f4f6f8; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+.priority { color: #006400; font-weight: bold; }
+.critical { color: #b30000; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>SAABIZ</h1>
+<h2>Merchant of Record (MoR) & Software Monetization Platform</h2>
+<h3>Comprehensive Product Requirements Document (Final Version)</h3>
+
+<div class="section">
+<h2>1. Product Overview</h2>
+<p><strong>SAABIZ</strong> is a modular Merchant of Record (MoR) and monetization platform built for software developers, SaaS founders, WordPress plugin/theme creators, and digital product makers.</p>
+<p>SABIZ acts as the legal reseller of record, managing payments, tax compliance, subscription billing, licensing, affiliate systems, and distribution infrastructure — allowing creators to focus solely on product development.</p>
+</div>
+
+<div class="section">
+<h2>2. Target Users</h2>
+<ul>
+<li><strong>Sellers (Developers & SaaS Founders)</strong></li>
+<li><strong>Buyers (End-Users)</strong></li>
+<li><strong>Affiliates (Commission-based promoters)</strong></li>
+</ul>
+</div>
+
+<div class="section">
+<h2>3. Strategic Priorities</h2>
+<ul>
+<li class="priority">Local-first payment dominance (Nigeria & Africa)</li>
+<li class="priority">Primary Gateways: Paystack & Flutterwave</li>
+<li class="priority">Flutterwave PayPal routing support</li>
+<li>Stripe for global processing & fallback</li>
+<li>Strict modular microservices architecture</li>
+<li>Docker-first low-cost deployment</li>
+<li>99.99% uptime Licensing API</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>4. Modular Architecture (Mandatory)</h2>
+
+<h3>Core Services</h3>
+<ul>
+<li>Authentication & Identity Service</li>
+<li>Seller Management Service</li>
+<li>Payment Gateway Orchestrator</li>
+<li>Tax & Compliance Service</li>
+<li>Subscription Engine</li>
+<li>Licensing & Distribution Engine (Isolated)</li>
+<li>Checkout Service (Hosted + Embedded)</li>
+<li>Customer Portal Service</li>
+<li>Affiliate Management Service</li>
+<li>Analytics & Reporting Service</li>
+<li>Email & Notification Service</li>
+<li>Webhook & Event Processing Service</li>
+<li>SDK & Developer Tools Service</li>
+</ul>
+
+<p class="critical">Licensing engine must remain fully independent from payment failures.</p>
+</div>
+
+<div class="section">
+<h2>5. Payment Infrastructure</h2>
+
+<h3>Integrated Gateways</h3>
+<ul>
+<li><strong>Paystack (Primary - Local Nigeria/Africa)</strong></li>
+<li><strong>Flutterwave (Primary - Multi-country + PayPal Routing)</strong></li>
+<li><strong>Stripe (Global Cards & Backup)</strong></li>
+</ul>
+
+<h3>Payment Features</h3>
+<ul>
+<li>Credit/Debit Cards</li>
+<li>Apple Pay</li>
+<li>Google Pay</li>
+<li>PayPal (via Flutterwave)</li>
+<li>Multi-currency support</li>
+<li>Geo-based gateway routing</li>
+<li>Fallback processing</li>
+<li>Revenue splitting</li>
+</ul>
+
+<h3>Tax & Compliance</h3>
+<ul>
+<li>US Sales Tax</li>
+<li>UK VAT</li>
+<li>EU VAT</li>
+<li>TaxJar/Avalara/Quaderno integration</li>
+<li>Automated invoice generation</li>
+</ul>
+
+<h3>Fraud & Disputes</h3>
+<ul>
+<li>Fraud screening tools</li>
+<li>Chargeback dashboard</li>
+<li>Dispute management workflows</li>
+</ul>
+
+<h3>Seller Payouts</h3>
+<ul>
+<li>Paystack transfers</li>
+<li>Flutterwave transfers</li>
+<li>Stripe Connect payouts</li>
+<li>Wire transfer support</li>
+<li>PayPal payouts</li>
+<li>Automated payout scheduling</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>6. Subscription & Billing Engine</h2>
+<ul>
+<li>One-time purchases</li>
+<li>Monthly subscriptions</li>
+<li>Annual subscriptions</li>
+<li>Free trials</li>
+<li>Freemium model</li>
+<li>Upgrade/downgrade with proration</li>
+<li>Cancellation logic</li>
+<li>Dunning retry system</li>
+<li>Grace period handling</li>
+</ul>
+
+<p class="critical">Subscription engine must handle state transitions safely and idempotently.</p>
+</div>
+
+<div class="section">
+<h2>7. Licensing & Distribution Engine</h2>
+<ul>
+<li>Secure license key generation</li>
+<li>Hashed license storage</li>
+<li>Real-time validation API</li>
+<li>Feature flag enforcement</li>
+<li>Activation limits (1-site, multi-site, unlimited)</li>
+<li>OTA software update delivery</li>
+<li>Signed secure download URLs</li>
+<li>Edge caching + CDN</li>
+</ul>
+
+<p class="critical">Must maintain 99.99% uptime to prevent user lockouts.</p>
+</div>
+
+<div class="section">
+<h2>8. Checkout Experience</h2>
+
+<h3>Embedded Checkout (Checkout.js)</h3>
+<ul>
+<li>Drop-in JS script</li>
+<li>Secure tokenization</li>
+<li>Seller styling options</li>
+<li>Gateway routing logic</li>
+</ul>
+
+<h3>Hosted Checkout Pages</h3>
+<ul>
+<li>Custom branding</li>
+<li>Conversion-optimized layout</li>
+<li>Auto currency detection</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>9. Seller Dashboard</h2>
+<ul>
+<li>Create products</li>
+<li>Define pricing tiers</li>
+<li>Add-ons/extensions</li>
+<li>MRR analytics</li>
+<li>Churn rate tracking</li>
+<li>Active subscriptions</li>
+<li>Refund rate</li>
+<li>LTV tracking</li>
+<li>Customer CRM</li>
+<li>Manual refunds</li>
+<li>Revoke licenses</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>10. Customer Portal</h2>
+<ul>
+<li>Secure login</li>
+<li>Manage subscriptions</li>
+<li>Upgrade/downgrade plans</li>
+<li>Update payment methods</li>
+<li>Download software</li>
+<li>View invoices</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>11. Affiliate & Growth Tools</h2>
+<ul>
+<li>Affiliate portal</li>
+<li>Referral tracking links</li>
+<li>Commission configuration</li>
+<li>Affiliate payout processing</li>
+<li>Affiliate performance dashboard</li>
+<li>Cart abandonment email automation</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>12. Developer Tools</h2>
+<ul>
+<li>Full REST API</li>
+<li>License management endpoints</li>
+<li>Customer endpoints</li>
+<li>Plan endpoints</li>
+<li>Webhooks (subscription.created, license.expired, payment.failed)</li>
+<li>PHP SDK</li>
+<li>WordPress SDK</li>
+<li>JavaScript SDK</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>13. Security & Compliance</h2>
+<ul>
+<li>PCI-DSS via payment gateways</li>
+<li>GDPR compliance readiness</li>
+<li>CCPA compliance readiness</li>
+<li>SCA compliance</li>
+<li>Encrypted data at rest</li>
+<li>Encrypted data in transit</li>
+<li>Role-based access control</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>14. Deployment Strategy (Docker-First & Low Cost)</h2>
+
+<h3>Primary Deployment Approach</h3>
+<ul>
+<li>Docker containerization for all services</li>
+<li>Docker Compose for MVP</li>
+<li>Single VPS (Hetzner / Contabo / DigitalOcean)</li>
+<li>Nginx reverse proxy</li>
+<li>PostgreSQL container</li>
+<li>Redis container</li>
+<li>MinIO (S3-compatible storage)</li>
+<li>Let’s Encrypt SSL</li>
+</ul>
+
+<h3>CI/CD</h3>
+<ul>
+<li>GitHub Actions</li>
+<li>Auto-build Docker images</li>
+<li>Push to Docker registry</li>
+<li>Auto deploy via SSH</li>
+</ul>
+
+<h3>Scaling Path</h3>
+<ul>
+<li>Phase 1: Single VPS + Docker Compose</li>
+<li>Phase 2: Docker Swarm multi-node</li>
+<li>Phase 3: Kubernetes cluster</li>
+</ul>
+
+<h3>Estimated Launch Cost</h3>
+<ul>
+<li>$10–$25/month VPS</li>
+<li>Free SSL</li>
+<li>Pay-as-you-go email provider</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>15. Development Roadmap</h2>
+
+<div class="phase">
+<h3>Phase 1 – MVP</h3>
+<ul>
+<li>Dockerized architecture</li>
+<li>Seller dashboard</li>
+<li>Paystack integration</li>
+<li>Flutterwave integration</li>
+<li>Hosted checkout</li>
+<li>Basic license engine</li>
+</ul>
+</div>
+
+<div class="phase">
+<h3>Phase 2 – Subscriptions & MoR</h3>
+<ul>
+<li>Recurring billing engine</li>
+<li>Proration logic</li>
+<li>Stripe integration</li>
+<li>Tax API integration</li>
+<li>Embedded Checkout.js</li>
+<li>Customer portal</li>
+</ul>
+</div>
+
+<div class="phase">
+<h3>Phase 3 – Ecosystem Growth</h3>
+<ul>
+<li>Affiliate system</li>
+<li>Cart abandonment automation</li>
+<li>SDK releases</li>
+<li>Advanced analytics</li>
+<li>Webhook architecture</li>
+<li>Licensing edge scaling</li>
+</ul>
+</div>
+
+</div>
+
+<div class="section">
+<h2>16. Success Metrics</h2>
+<ul>
+<li>99.99% Licensing uptime</li>
+<li>Checkout conversion rate</li>
+<li>Seller retention</li>
+<li>Subscription churn</li>
+<li>Affiliate-driven revenue growth</li>
+</ul>
+</div>
+
+</body>
+</html>

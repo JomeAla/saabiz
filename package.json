@@ -14,8 +14,11 @@
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
+    "next": "14.2.3",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0"
@@ -31,6 +34,8 @@
     "@types/bcrypt": "^5.0.0",
     "@types/node": "18.16.9",
     "@types/passport-jwt": "^3.0.8",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.1",
     "nx": "20.4.6",
     "prisma": "^5.0.0",
     "typescript": "~5.5.2"

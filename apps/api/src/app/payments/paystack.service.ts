@@ -9,10 +9,8 @@ export class PaystackService {
 
   constructor(private prisma: PrismaService) {}
 
-  private async getHeaders(sellerId: string) {
-    const config = await this.prisma.paymentConfig.findUnique({
-      where: { sellerId },
-    });
+  private async getHeaders() {
+    const config = await this.prisma.platformConfig.findFirst();
 
     if (!config?.paystackSecretKey) {
       throw new Error('Paystack secret key not configured');
@@ -24,9 +22,9 @@ export class PaystackService {
     };
   }
 
-  async initializeTransaction(sellerId: string, email: string, amount: number, reference?: string) {
+  async initializeTransaction(email: string, amount: number, reference?: string) {
     try {
-      const headers = await this.getHeaders(sellerId);
+      const headers = await this.getHeaders();
       const response = await axios.post(
         `${this.baseUrl}/transaction/initialize`,
         {
@@ -43,9 +41,9 @@ export class PaystackService {
     }
   }
 
-  async verifyTransaction(sellerId: string, reference: string) {
+  async verifyTransaction(reference: string) {
     try {
-      const headers = await this.getHeaders(sellerId);
+      const headers = await this.getHeaders();
       const response = await axios.get(`${this.baseUrl}/transaction/verify/${reference}`, {
         headers,
       });

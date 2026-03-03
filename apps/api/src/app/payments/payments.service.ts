@@ -6,24 +6,23 @@ import { UpdatePaymentConfigDto } from './dto/payment-config.dto';
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  async getPaymentConfig(sellerId: string) {
-    const config = await this.prisma.paymentConfig.findUnique({
-      where: { sellerId },
-    });
+  async getPaymentConfig() {
+    const config = await this.prisma.platformConfig.findFirst();
     if (!config) {
-      throw new NotFoundException('Payment configuration not found');
+      throw new NotFoundException('Platform payment configuration not found');
     }
     return config;
   }
 
-  async updatePaymentConfig(sellerId: string, dto: UpdatePaymentConfigDto) {
-    return this.prisma.paymentConfig.upsert({
-      where: { sellerId },
-      update: dto,
-      create: {
-        ...dto,
-        sellerId,
-      },
-    });
+  async updatePaymentConfig(dto: UpdatePaymentConfigDto) {
+    const existingConfig = await this.prisma.platformConfig.findFirst();
+    if (existingConfig) {
+      return this.prisma.platformConfig.update({
+        where: { id: existingConfig.id },
+        data: dto,
+      });
+    } else {
+      return this.prisma.platformConfig.create({ data: dto });
+    }
   }
 }

@@ -26,7 +26,7 @@ export default function PaymentConfigForm() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/payments/config', {
+      const response = await fetch('/api/admin/payments/config', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -48,7 +48,7 @@ export default function PaymentConfigForm() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/payments/config', {
+      const response = await fetch('/api/admin/payments/config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

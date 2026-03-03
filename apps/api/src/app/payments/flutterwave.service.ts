@@ -9,10 +9,8 @@ export class FlutterwaveService {
 
   constructor(private prisma: PrismaService) {}
 
-  private async getHeaders(sellerId: string) {
-    const config = await this.prisma.paymentConfig.findUnique({
-      where: { sellerId },
-    });
+  private async getHeaders() {
+    const config = await this.prisma.platformConfig.findFirst();
 
     if (!config?.flutterwaveSecretKey) {
       throw new Error('Flutterwave secret key not configured');
@@ -25,14 +23,13 @@ export class FlutterwaveService {
   }
 
   async initializeTransaction(
-    sellerId: string,
     email: string,
     amount: number,
     tx_ref: string,
     customer_name?: string
   ) {
     try {
-      const headers = await this.getHeaders(sellerId);
+      const headers = await this.getHeaders();
       const response = await axios.post(
         `${this.baseUrl}/payments`,
         {
@@ -57,9 +54,9 @@ export class FlutterwaveService {
     }
   }
 
-  async verifyTransaction(sellerId: string, transactionId: string) {
+  async verifyTransaction(transactionId: string) {
     try {
-      const headers = await this.getHeaders(sellerId);
+      const headers = await this.getHeaders();
       const response = await axios.get(`${this.baseUrl}/transactions/${transactionId}/verify`, {
         headers,
       });

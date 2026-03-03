@@ -21,27 +21,24 @@ model User {
 }
 
 model Seller {
-  id            String         @id @default(uuid())
-  userId        String         @unique
-  user          User           @relation(fields: [userId], references: [id])
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
   businessName  String?
   products      Product[]
-  paymentConfig PaymentConfig?
 }
 
-model PaymentConfig {
-  id                  String   @id @default(uuid())
-  sellerId            String   @unique
-  seller              Seller   @relation(fields: [sellerId], references: [id])
-  paystackPublicKey   String?
-  paystackSecretKey   String?
-  flutterwavePublicKey String?
-  flutterwaveSecretKey String?
+model PlatformConfig {
+  id                   String   @id @default(uuid())
+  paystackPublicKey    String?
+  paystackSecretKey    String?
+  flutterwavePublicKey  String?
+  flutterwaveSecretKey  String?
   flutterwaveEncryptionKey String?
-  stripePublicKey     String?
-  stripeSecretKey     String?
-  webhookSecret       String?
-  updatedAt           DateTime @updatedAt
+  stripePublicKey      String?
+  stripeSecretKey      String?
+  webhookSecret        String?
+  updatedAt            DateTime @updatedAt
 }
 
 model Product {

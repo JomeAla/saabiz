@@ -8,16 +8,22 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "es2015",
+    "target": "es2021",
     "module": "esnext",
-    "lib": ["es2017", "dom"],
+    "lib": ["es2021", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
     "paths": {
       "@saabiz/api": ["apps/api/src/main.ts"],
       "@saabiz/web": ["apps/web/src/app/page.tsx"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types"]
   },
   "exclude": ["node_modules", "tmp"]
 }

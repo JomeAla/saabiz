@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "outDir": "../../dist/apps/api",
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],

@@ -28,7 +28,28 @@ export class WebhooksService {
     const event = JSON.parse(body.toString());
     this.logger.log(`Received Paystack event: ${event.event}`)
 
-    // Process the event here
+    if (event.event === 'charge.success') {
+      const { reference, amount, customer } = event.data;
+      const transaction = await this.prisma.transaction.create({
+        data: {
+          reference,
+          amount: amount / 100,
+          gateway: 'paystack',
+          status: 'success',
+          product: { connect: { id: 'clx20101p000008l36p11a02g' } },
+          plan: { connect: { id: 'clx20101p000008l36p11a02g' } },
+        },
+      });
+
+      await this.prisma.license.create({
+        data: {
+          key: `SAABIZ-${crypto.randomBytes(8).toString('hex').toUpperCase()}`,
+          active: true,
+          product: { connect: { id: 'clx20101p000008l36p11a02g' } },
+          transaction: { connect: { id: transaction.id } },
+        },
+      });
+    }
 
     return { status: 'success' };
   }
@@ -45,7 +66,28 @@ export class WebhooksService {
 
     this.logger.log(`Received Flutterwave event: ${payload.event}`)
 
-    // Process the event here
+    if (payload.event === 'charge.completed' && payload.data.status === 'successful') {
+      const { tx_ref, amount, customer } = payload.data;
+      const transaction = await this.prisma.transaction.create({
+        data: {
+          reference: tx_ref,
+          amount,
+          gateway: 'flutterwave',
+          status: 'success',
+          product: { connect: { id: 'clx20101p000008l36p11a02g' } },
+          plan: { connect: { id: 'clx20101p000008l36p11a02g' } },
+        },
+      });
+
+      await this.prisma.license.create({
+        data: {
+          key: `SAABIZ-${crypto.randomBytes(8).toString('hex').toUpperCase()}`,
+          active: true,
+          product: { connect: { id: 'clx20101p000008l36p11a02g' } },
+          transaction: { connect: { id: transaction.id } },
+        },
+      });
+    }
 
     return { status: 'success' };
   }

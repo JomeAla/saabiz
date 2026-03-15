@@ -43,4 +43,25 @@ export class LicensesService {
       expiresAt: license.expiresAt,
     };
   }
+
+  async getSubscribersBySeller(userId: string) {
+    const seller = await this.prisma.seller.findUnique({ where: { userId } });
+    if (!seller) throw new NotFoundException('Seller profile not found');
+
+    return this.prisma.license.findMany({
+      where: {
+        product: {
+          sellerId: seller.id
+        }
+      },
+      include: {
+        product: true,
+        transaction: {
+          include: {
+            plan: true
+          }
+        }
+      }
+    });
+  }
 }

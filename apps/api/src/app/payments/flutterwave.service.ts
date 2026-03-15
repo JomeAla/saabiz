@@ -26,6 +26,8 @@ export class FlutterwaveService {
     email: string,
     amount: number,
     tx_ref: string,
+    productId: string,
+    planId: string,
     customer_name?: string
   ) {
     try {
@@ -41,6 +43,10 @@ export class FlutterwaveService {
             email,
             name: customer_name,
           },
+          meta: {
+            productId,
+            planId
+          },
           customizations: {
             title: 'SAABIZ Payment',
           },
@@ -48,7 +54,7 @@ export class FlutterwaveService {
         { headers }
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Flutterwave Initialization Error: ${error.message}`, error.response?.data);
       throw error;
     }
@@ -61,7 +67,7 @@ export class FlutterwaveService {
         headers,
       });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Flutterwave Verification Error: ${error.message}`, error.response?.data);
       throw error;
     }

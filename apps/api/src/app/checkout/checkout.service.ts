@@ -15,18 +15,29 @@ export class CheckoutService {
   ) {}
 
   async initializePayment(dto: InitializePaymentDto) {
-    const { email, amount, gateway, currency, reference } = dto;
+    const { email, productId, planId, gateway, currency, reference } = dto;
     const config = await this.prisma.platformConfig.findFirst();
+
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: planId },
+      include: { product: true }
+    });
+
+    if (!plan || plan.productId !== productId) {
+      throw new BadRequestException('Invalid product or plan configuration. Please refresh.');
+    }
+
+    const amount = plan.price;
 
     if (gateway === 'paystack') {
       if (!config?.paystackActive) throw new BadRequestException('Paystack payment is disabled by admin');
-      return this.paystackService.initializeTransaction(email, amount, reference);
+      return this.paystackService.initializeTransaction(email, amount, reference || '', productId, planId);
     } else if (gateway === 'flutterwave') {
       if (!config?.flutterwaveActive) throw new BadRequestException('Flutterwave payment is disabled by admin');
-      return this.flutterwaveService.initializeTransaction(email, amount, reference);
+      return this.flutterwaveService.initializeTransaction(email, amount, reference || '', productId, planId);
     } else if (gateway === 'stripe') {
       if (!config?.stripeActive) throw new BadRequestException('Stripe payment is disabled by admin');
-      return this.stripeService.createCheckoutSession(email, amount, currency);
+      return this.stripeService.createCheckoutSession(email, amount, currency || 'usd', productId, planId);
     } else {
       throw new BadRequestException('Invalid payment gateway');
     }

@@ -2,14 +2,17 @@ import { IsEmail, IsNumber, IsString, IsOptional, IsIn } from 'class-validator';
 
 export class InitializePaymentDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
-  @IsNumber()
-  amount: number;
+  @IsString()
+  productId!: string;
+
+  @IsString()
+  planId!: string;
 
   @IsString()
   @IsIn(['paystack', 'flutterwave', 'stripe'])
-  gateway: string;
+  gateway!: string;
 
   @IsString()
   @IsOptional()

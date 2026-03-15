@@ -22,7 +22,7 @@ export class PaystackService {
     };
   }
 
-  async initializeTransaction(email: string, amount: number, reference?: string) {
+  async initializeTransaction(email: string, amount: number, reference: string, productId: string, planId: string) {
     try {
       const headers = await this.getHeaders();
       const response = await axios.post(
@@ -31,11 +31,19 @@ export class PaystackService {
           email,
           amount: Math.round(amount * 100), // Paystack expects amount in kobo
           reference,
+          metadata: {
+            custom_fields: [
+              { display_name: "Product ID", variable_name: "product_id", value: productId },
+              { display_name: "Plan ID", variable_name: "plan_id", value: planId }
+            ],
+            productId,
+            planId
+          }
         },
         { headers }
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Paystack Initialization Error: ${error.message}`, error.response?.data);
       throw error;
     }
@@ -48,7 +56,7 @@ export class PaystackService {
         headers,
       });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Paystack Verification Error: ${error.message}`, error.response?.data);
       throw error;
     }

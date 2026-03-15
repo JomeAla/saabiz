@@ -8,6 +8,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ProductsModule } from './products/products.module';
 import { PlansModule } from './plans/plans.module';
+import { LicensesModule } from './licenses/licenses.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { PlansModule } from './plans/plans.module';
     CheckoutModule, 
     WebhooksModule,
     ProductsModule,
-    PlansModule
+    PlansModule,
+    LicensesModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

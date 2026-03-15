@@ -51,10 +51,21 @@ export class WebhooksService {
         },
       });
 
+      const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+      let expiresAt: Date | null = null;
+      if (plan?.interval === 'MONTHLY') {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+      } else if (plan?.interval === 'ANNUAL') {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 365);
+      }
+
       await this.prisma.license.create({
         data: {
           key: `SAABIZ-${crypto.randomBytes(8).toString('hex').toUpperCase()}`,
           active: true,
+          expiresAt: expiresAt,
           product: { connect: { id: productId } },
           transaction: { connect: { id: transaction.id } },
         },
@@ -98,10 +109,21 @@ export class WebhooksService {
         },
       });
 
+      const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+      let expiresAt: Date | null = null;
+      if (plan?.interval === 'MONTHLY') {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+      } else if (plan?.interval === 'ANNUAL') {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 365);
+      }
+
       await this.prisma.license.create({
         data: {
           key: `SAABIZ-${crypto.randomBytes(8).toString('hex').toUpperCase()}`,
           active: true,
+          expiresAt: expiresAt,
           product: { connect: { id: productId } },
           transaction: { connect: { id: transaction.id } },
         },
@@ -154,10 +176,21 @@ export class WebhooksService {
         },
       });
 
+      const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+      let expiresAt: Date | null = null;
+      if (plan?.interval === 'MONTHLY') {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+      } else if (plan?.interval === 'ANNUAL') {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 365);
+      }
+
       await this.prisma.license.create({
         data: {
           key: `SAABIZ-${crypto.randomBytes(8).toString('hex').toUpperCase()}`,
           active: true,
+          expiresAt: expiresAt,
           product: { connect: { id: productId } },
           transaction: { connect: { id: transaction.id } },
         },

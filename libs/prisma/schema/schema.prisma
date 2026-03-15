@@ -32,11 +32,14 @@ model PlatformConfig {
   id                   String   @id @default(uuid())
   paystackPublicKey    String?
   paystackSecretKey    String?
+  paystackActive       Boolean  @default(false)
   flutterwavePublicKey  String?
   flutterwaveSecretKey  String?
   flutterwaveEncryptionKey String?
+  flutterwaveActive     Boolean  @default(false)
   stripePublicKey      String?
   stripeSecretKey      String?
+  stripeActive         Boolean  @default(false)
   webhookSecret        String?
   updatedAt            DateTime @updatedAt
 }

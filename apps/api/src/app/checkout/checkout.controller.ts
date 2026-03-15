@@ -11,6 +11,11 @@ export class CheckoutController {
     return this.checkoutService.initializePayment(dto);
   }
 
+  @Get('config')
+  async getPublicConfig() {
+    return this.checkoutService.getPublicConfig();
+  }
+
   @Get('verify')
   async verifyPayment(@Query('reference') reference: string, @Query('gateway') gateway: string) {
     return this.checkoutService.verifyPayment(reference, gateway);

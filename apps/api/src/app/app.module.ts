@@ -6,9 +6,18 @@ import { PrismaService } from './prisma.service';
 import { PaymentsModule } from './payments/payments.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { ProductsModule } from './products/products.module';
+import { PlansModule } from './plans/plans.module';
 
 @Module({
-  imports: [AuthModule, PaymentsModule, CheckoutModule, WebhooksModule],
+  imports: [
+    AuthModule, 
+    PaymentsModule, 
+    CheckoutModule, 
+    WebhooksModule,
+    ProductsModule,
+    PlansModule
+  ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

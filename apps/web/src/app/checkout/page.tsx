@@ -1,15 +1,37 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CreditCard, DollarSign, Mail, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, DollarSign, Mail, Loader2, AlertCircle } from 'lucide-react';
 
 export default function CheckoutPage() {
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState('');
-  const [gateway, setGateway] = useState('paystack');
+  const [gateway, setGateway] = useState('');
   const [loading, setLoading] = useState(false);
+  const [configLoading, setConfigLoading] = useState(true);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeConfig, setActiveConfig] = useState({
+    paystackActive: false,
+    flutterwaveActive: false,
+    stripeActive: false,
+  });
+
+  useEffect(() => {
+    fetch('/api/checkout/config')
+      .then(res => res.json())
+      .then(data => {
+        setActiveConfig(data);
+        if (data.paystackActive) setGateway('paystack');
+        else if (data.flutterwaveActive) setGateway('flutterwave');
+        else if (data.stripeActive) setGateway('stripe');
+        setConfigLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load gateway config:', err);
+        setConfigLoading(false);
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +55,8 @@ export default function CheckoutPage() {
           setPaymentUrl(data.data.authorization_url);
         } else if (gateway === 'flutterwave') {
           setPaymentUrl(data.data.link);
+        } else if (gateway === 'stripe') {
+          setPaymentUrl(data.url);
         }
       } else {
         setError(data.message || 'Failed to initialize payment');
@@ -104,28 +128,59 @@ export default function CheckoutPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Payment Gateway</label>
             <div className="mt-2 flex space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="gateway"
-                  value="paystack"
-                  checked={gateway === 'paystack'}
-                  onChange={() => setGateway('paystack')}
-                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-gray-700">Paystack</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="gateway"
-                  value="flutterwave"
-                  checked={gateway === 'flutterwave'}
-                  onChange={() => setGateway('flutterwave')}
-                  className="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
-                />
-                <span className="ml-2 text-gray-700">Flutterwave</span>
-              </label>
+              {configLoading ? (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading gateways...
+                </div>
+              ) : (
+                <>
+                  {!activeConfig.paystackActive && !activeConfig.flutterwaveActive && !activeConfig.stripeActive && (
+                    <div className="text-red-500 flex items-center gap-2 text-sm">
+                      <AlertCircle className="w-4 h-4" /> No payment gateways are currently enabled by the admin.
+                    </div>
+                  )}
+
+                  {activeConfig.paystackActive && (
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gateway"
+                        value="paystack"
+                        checked={gateway === 'paystack'}
+                        onChange={() => setGateway('paystack')}
+                        className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-gray-700 font-medium">Paystack</span>
+                    </label>
+                  )}
+                  {activeConfig.flutterwaveActive && (
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gateway"
+                        value="flutterwave"
+                        checked={gateway === 'flutterwave'}
+                        onChange={() => setGateway('flutterwave')}
+                        className="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                      />
+                      <span className="ml-2 text-gray-700 font-medium">Flutterwave</span>
+                    </label>
+                  )}
+                  {activeConfig.stripeActive && (
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gateway"
+                        value="stripe"
+                        checked={gateway === 'stripe'}
+                        onChange={() => setGateway('stripe')}
+                        className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                      />
+                      <span className="ml-2 text-gray-700 font-medium">Stripe</span>
+                    </label>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

@@ -21,4 +21,8 @@ export class InitializePaymentDto {
   @IsString()
   @IsOptional()
   reference?: string;
+
+  @IsString()
+  @IsOptional()
+  refCode?: string;
 }

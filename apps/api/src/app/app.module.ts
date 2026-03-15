@@ -9,6 +9,9 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { ProductsModule } from './products/products.module';
 import { PlansModule } from './plans/plans.module';
 import { LicensesModule } from './licenses/licenses.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { AdminModule } from './admin/admin.module';
+import { AffiliatesModule } from './affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -18,7 +21,10 @@ import { LicensesModule } from './licenses/licenses.module';
     WebhooksModule,
     ProductsModule,
     PlansModule,
-    LicensesModule
+    LicensesModule,
+    SubscriptionsModule,
+    AdminModule,
+    AffiliatesModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

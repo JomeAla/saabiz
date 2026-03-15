@@ -18,6 +18,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   seller    Seller?
+  affiliate Affiliate?
 }
 
 model Seller {
@@ -25,7 +26,84 @@ model Seller {
   userId        String    @unique
   user          User      @relation(fields: [userId], references: [id])
   businessName  String?
+  payoutEmail   String?
+  payoutGateway String?
+  totalEarnings Float     @default(0)
+  pendingPayout Float     @default(0)
   products      Product[]
+}
+
+model Affiliate {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  affiliateCode   String    @unique
+  commissionRate  Float     @default(0.1)
+  totalEarnings   Float     @default(0)
+  pendingPayout   Float     @default(0)
+  totalReferrals  Int       @default(0)
+  totalCommission Float     @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  links           AffiliateLink[]
+  commissions     AffiliateCommission[]
+  payouts         AffiliatePayout[]
+}
+
+model AffiliateLink {
+  id          String    @id @default(uuid())
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  code        String    @unique
+  clicks      Int       @default(0)
+  conversions Int       @default(0)
+  createdAt   DateTime  @default(now())
+  isActive    Boolean   @default(true)
+
+  @@unique([affiliateId, productId])
+}
+
+model AffiliateCommission {
+  id            String        @id @default(uuid())
+  affiliateId   String
+  affiliate     Affiliate     @relation(fields: [affiliateId], references: [id])
+  transactionId String?      @unique
+  transaction   Transaction?  @relation(fields: [transactionId], references: [id])
+  productId     String
+  product       Product       @relation(fields: [productId], references: [id])
+  amount        Float
+  currency      String        @default("USD")
+  status        CommissionStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  paidAt        DateTime?
+}
+
+model AffiliatePayout {
+  id           String   @id @default(uuid())
+  affiliateId  String
+  affiliate    Affiliate @relation(fields: [affiliateId], references: [id])
+  amount       Float
+  currency     String   @default("USD")
+  status       PayoutStatus @default(PENDING)
+  reference    String?  @unique
+  createdAt    DateTime @default(now())
+  processedAt  DateTime?
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 model PlatformConfig {
@@ -50,30 +128,14 @@ model Product {
   seller      Seller   @relation(fields: [sellerId], references: [id])
   name        String
   description String?
+  isFrozen    Boolean  @default(false)
+  freezeReason String?
   plans       Plan[]
   licenses    License[]
   transactions Transaction[]
-}
-
-model Plan {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  name      String
-  price     Float
-  interval  Interval @default(ONETIME)
-  transactions Transaction[]
-}
-
-model License {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  key       String   @unique
-  active    Boolean  @default(true)
-  expiresAt DateTime?
-  transactionId String? @unique
-  transaction  Transaction? @relation(fields: [transactionId], references: [id])
+  subscriptions Subscription[]
+  affiliateLinks AffiliateLink[]
+  commissions     AffiliateCommission[]
 }
 
 model Transaction {
@@ -85,15 +147,76 @@ model Transaction {
   reference   String    @unique
   gateway     String
   amount      Float
+  currency    String    @default("USD")
   status      String
+  buyerEmail  String?
+  platformFee Float     @default(0)
+  sellerEarnings Float  @default(0)
+  affiliateId   String?
+  subscriptionId String?
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   license     License?
+  affiliateCommission AffiliateCommission?
+}
+
+model Plan {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  name      String
+  price     Float
+  interval  Interval @default(ONETIME)
+  isDefault Boolean  @default(false)
+  transactions Transaction[]
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id             String        @id @default(uuid())
+  customerEmail  String
+  productId      String
+  product        Product       @relation(fields: [productId], references: [id])
+  planId         String
+  plan           Plan          @relation(fields: [planId], references: [id])
+  gateway        String
+  gatewaySubscriptionId String?
+  status         SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  licenses       License[]
+  transactions   Transaction[]
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+model License {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  key       String   @unique
+  active    Boolean  @default(true)
+  expiresAt DateTime?
+  buyerEmail String?
+  transactionId String? @unique
+  transaction  Transaction? @relation(fields: [transactionId], references: [id])
+  subscriptionId String?
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
 }
 
 enum Role {
   ADMIN
   SELLER
+  CUSTOMER
   AFFILIATE
 }
 

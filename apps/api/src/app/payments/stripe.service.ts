@@ -5,7 +5,7 @@ import Stripe from 'stripe';
 @Injectable()
 export class StripeService {
   private readonly logger = new Logger(StripeService.name);
-  private stripe: Stripe;
+  private stripe!: Stripe;
 
   constructor(private prisma: PrismaService) {
     this.initializeStripe();
@@ -16,7 +16,7 @@ export class StripeService {
     if (!config?.stripeSecretKey) {
       throw new Error('Stripe secret key not configured');
     }
-    this.stripe = new Stripe(config.stripeSecretKey, { apiVersion: '2024-06-20' });
+    this.stripe = new Stripe(config.stripeSecretKey);
   }
 
   async createCheckoutSession(email: string, amount: number, currency: string, productId: string, planId: string) {

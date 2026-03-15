@@ -61,4 +61,86 @@ export class PaystackService {
       throw error;
     }
   }
+
+  async createTransferRecipient(name: string, email: string, bankCode: string, accountNumber: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.post(
+        `${this.baseUrl}/transferrecipient`,
+        {
+          type: 'nuban',
+          name,
+          email,
+          bank_code: bankCode,
+          account_number: accountNumber,
+        },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Paystack Create Recipient Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async initiateTransfer(amount: number, recipientCode: string, reason: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.post(
+        `${this.baseUrl}/transfer`,
+        {
+          source: 'balance',
+          amount: Math.round(amount * 100),
+          recipient: recipientCode,
+          reason,
+        },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Paystack Transfer Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async getTransferStatus(transferCode: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.get(`${this.baseUrl}/transfer/${transferCode}`, {
+        headers,
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Paystack Transfer Status Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async getBanks() {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.get(`${this.baseUrl}/bank`, {
+        headers,
+        params: { country: 'nigeria' }
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Paystack Get Banks Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async resolveAccount(accountNumber: string, bankCode: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.get(
+        `${this.baseUrl}/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`,
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Paystack Resolve Account Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
 }

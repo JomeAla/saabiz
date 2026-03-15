@@ -3,14 +3,14 @@ import { Interval } from '@prisma/client';
 
 export class CreatePlanDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsNumber()
-  price: number;
+  price!: number;
 
   @IsEnum(Interval)
-  interval: Interval;
+  interval!: Interval;
 
   @IsUUID()
-  productId: string;
+  productId!: string;
 }

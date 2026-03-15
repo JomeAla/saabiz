@@ -72,4 +72,82 @@ export class FlutterwaveService {
       throw error;
     }
   }
+
+  async createTransferRecipient(
+    accountNumber: string,
+    bankCode: string,
+    accountHolderName: string,
+    currency: string = 'NGN'
+  ) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.post(
+        `${this.baseUrl}/accounts/resolve`,
+        {
+          account_number: accountNumber,
+          account_bank: bankCode,
+        },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Flutterwave Create Recipient Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async initiateTransfer(
+    accountNumber: string,
+    bankCode: string,
+    amount: number,
+    accountHolderName: string,
+    reference: string,
+    currency: string = 'NGN'
+  ) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.post(
+        `${this.baseUrl}/transfers`,
+        {
+          account_number: accountNumber,
+          account_bank: bankCode,
+          amount,
+          currency,
+          reference,
+          beneficiary_name: accountHolderName,
+        },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Flutterwave Transfer Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async getTransferStatus(reference: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.get(`${this.baseUrl}/transfers/${reference}`, {
+        headers,
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Flutterwave Transfer Status Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  async getBanks(country: string = 'NG') {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.get(`${this.baseUrl}/banks/${country}`, {
+        headers,
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Flutterwave Get Banks Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
 }

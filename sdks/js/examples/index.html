@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAABIZ SDK Example</title>
+</head>
+<body>
+  <h1>SAABIZ JavaScript SDK Example</h1>
+  
+  <div id="app">
+    <div id="result"></div>
+  </div>
+
+  <script type="module">
+    import { SaabizSDK } from './dist/index.js';
+
+    const saabiz = new SaabizSDK({
+      apiUrl: 'https://api.saabiz.com',
+      apiKey: 'your-api-key-optional'
+    });
+
+    async function runExample() {
+      const resultDiv = document.getElementById('result');
+
+      resultDiv.innerHTML = '<p>Testing license validation...</p>';
+
+      const validationResult = await saabiz.validateLicense(
+        'SAABIZ-ABC123DEF456',
+        'product-uuid-here'
+      );
+
+      if (validationResult.valid) {
+        resultDiv.innerHTML = `
+          <p style="color: green;">✓ License is valid!</p>
+          <p>Product: ${validationResult.productName}</p>
+          <p>Expires: ${validationResult.expiresAt || 'Never'}</p>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <p style="color: red;">✗ License is invalid</p>
+          <p>Reason: ${validationResult.reason}</p>
+        `;
+      }
+
+      resultDiv.innerHTML += '<p>Checking for updates...</p>';
+
+      const updateResult = await saabiz.checkForUpdate(
+        'product-uuid-here',
+        '1.0.0'
+      );
+
+      if (updateResult.hasUpdate) {
+        resultDiv.innerHTML += `
+          <p style="color: orange;">⚠ Update available: ${updateResult.latestVersion}</p>
+          <p>Download: <a href="${updateResult.downloadUrl}">${updateResult.downloadUrl}</a></p>
+        `;
+      } else {
+        resultDiv.innerHTML += '<p>✓ You are running the latest version.</p>';
+      }
+    }
+
+    runExample().catch(console.error);
+  </script>
+</body>
+</html>

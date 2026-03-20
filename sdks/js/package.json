@@ -1,0 +1,31 @@
+{
+  "name": "@saabiz/js-sdk",
+  "version": "1.0.0",
+  "description": "SAABIZ JavaScript SDK for license validation and software activation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": [
+    "saabiz",
+    "license",
+    "validation",
+    "software",
+    "activation"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saabiz/js-sdk"
+  },
+  "peerDependencies": {
+    "axios": ">=0.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "axios": "^1.6.0",
+    "typescript": "^5.0.0"
+  }
+}

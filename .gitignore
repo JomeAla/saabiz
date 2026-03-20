@@ -40,3 +40,21 @@ Thumbs.db
 
 .nx/cache
 .nx/workspace-data
+
+# Next.js build output
+apps/web/.next/
+apps/web/tsconfig.tsbuildinfo
+apps/web/next-env.d.ts
+
+# Logs
+logs/
+*.log
+
+# OS artifacts
+Thumbs.db
+nul
+
+# Environment (keep .env.example if needed)
+.env
+.env.local
+.env.*.local

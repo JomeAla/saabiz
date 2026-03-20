@@ -15,7 +15,7 @@ export class CheckoutService {
   ) {}
 
   async initializePayment(dto: InitializePaymentDto) {
-    const { email, productId, planId, gateway, currency, reference, countryCode } = dto;
+    const { email, productId, planId, gateway, currency, reference, countryCode, refCode } = dto;
     const config = await this.prisma.platformConfig.findFirst();
 
     const plan = await this.prisma.plan.findUnique({
@@ -46,10 +46,10 @@ export class CheckoutService {
     let paymentResult;
     if (gateway === 'paystack') {
       if (!config?.paystackActive) throw new BadRequestException('Paystack payment is disabled by admin');
-      paymentResult = await this.paystackService.initializeTransaction(email, total, reference || '', productId, planId);
+      paymentResult = await this.paystackService.initializeTransaction(email, total, reference || '', productId, planId, refCode);
     } else if (gateway === 'flutterwave') {
       if (!config?.flutterwaveActive) throw new BadRequestException('Flutterwave payment is disabled by admin');
-      paymentResult = await this.flutterwaveService.initializeTransaction(email, total, reference || '', productId, planId);
+      paymentResult = await this.flutterwaveService.initializeTransaction(email, total, reference || '', productId, planId, undefined, refCode);
     } else {
       throw new BadRequestException('Invalid payment gateway');
     }

@@ -22,23 +22,28 @@ export class PaystackService {
     };
   }
 
-  async initializeTransaction(email: string, amount: number, reference: string, productId: string, planId: string) {
+  async initializeTransaction(email: string, amount: number, reference: string, productId: string, planId: string, affiliateCode?: string) {
     try {
       const headers = await this.getHeaders();
+      const metadata: any = {
+        custom_fields: [
+          { display_name: "Product ID", variable_name: "product_id", value: productId },
+          { display_name: "Plan ID", variable_name: "plan_id", value: planId }
+        ],
+        productId,
+        planId
+      };
+      if (affiliateCode) {
+        metadata.custom_fields.push({ display_name: "Affiliate Code", variable_name: "affiliate_code", value: affiliateCode });
+        metadata.affiliateCode = affiliateCode;
+      }
       const response = await axios.post(
         `${this.baseUrl}/transaction/initialize`,
         {
           email,
-          amount: Math.round(amount * 100), // Paystack expects amount in kobo
+          amount: Math.round(amount * 100),
           reference,
-          metadata: {
-            custom_fields: [
-              { display_name: "Product ID", variable_name: "product_id", value: productId },
-              { display_name: "Plan ID", variable_name: "plan_id", value: planId }
-            ],
-            productId,
-            planId
-          }
+          metadata,
         },
         { headers }
       );

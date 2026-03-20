@@ -28,25 +28,30 @@ export class FlutterwaveService {
     tx_ref: string,
     productId: string,
     planId: string,
-    customer_name?: string
+    customer_name?: string,
+    affiliateCode?: string
   ) {
     try {
       const headers = await this.getHeaders();
+      const meta: any = {
+        productId,
+        planId
+      };
+      if (affiliateCode) {
+        meta.affiliateCode = affiliateCode;
+      }
       const response = await axios.post(
         `${this.baseUrl}/payments`,
         {
           tx_ref,
           amount,
           currency: 'NGN',
-          redirect_url: 'http://localhost:4200/payment-status', // This should be configurable
+          redirect_url: 'http://localhost:4200/payment-status',
           customer: {
             email,
             name: customer_name,
           },
-          meta: {
-            productId,
-            planId
-          },
+          meta,
           customizations: {
             title: 'SAABIZ Payment',
           },

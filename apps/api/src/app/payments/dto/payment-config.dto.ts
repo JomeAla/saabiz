@@ -31,17 +31,5 @@ export class UpdatePaymentConfigDto {
 
   @IsOptional()
   @IsString()
-  stripePublicKey?: string;
-
-  @IsOptional()
-  @IsString()
-  stripeSecretKey?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  stripeActive?: boolean;
-
-  @IsOptional()
-  @IsString()
   webhookSecret?: string;
 }

@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaService } from '../prisma.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Module({
   imports: [
@@ -12,11 +13,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'super-secret-key',
-      signOptions: { expiresIn: '1d' },
+      signOptions: { 
+        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+        issuer: 'SAABIZ',
+      },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PrismaService, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, PrismaService, JwtStrategy, NotificationsService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

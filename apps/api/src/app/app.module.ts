@@ -12,9 +12,20 @@ import { LicensesModule } from './licenses/licenses.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { AdminModule } from './admin/admin.module';
 import { AffiliatesModule } from './affiliates/affiliates.module';
+import { SellerModule } from './seller/seller.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { TaxModule } from './tax/tax.module';
+import { CronModule } from './cron/cron.module';
+import { LoggerModule } from './logger/logger.module';
+import { AuditModule } from './audit/audit.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
+    LoggerModule,
+    AuditModule,
+    EventsModule,
     AuthModule, 
     PaymentsModule, 
     CheckoutModule, 
@@ -24,9 +35,15 @@ import { AffiliatesModule } from './affiliates/affiliates.module';
     LicensesModule,
     SubscriptionsModule,
     AdminModule,
-    AffiliatesModule
+    AffiliatesModule,
+    SellerModule,
+    InvoicesModule,
+    NotificationsModule,
+    TaxModule,
+    // CronModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
+  exports: [PrismaService],
 })
 export class AppModule {}

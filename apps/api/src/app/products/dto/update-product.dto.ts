@@ -8,4 +8,12 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsString()
+  @IsOptional()
+  downloadUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  version?: string;
 }

@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { StripeService } from '../payments/stripe.service';
 import { PaystackService } from '../payments/paystack.service';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { CancelSubscriptionDto, UpgradeSubscriptionDto } from './dto/subscription.dto';
@@ -9,7 +8,6 @@ import { CancelSubscriptionDto, UpgradeSubscriptionDto } from './dto/subscriptio
 export class SubscriptionsService {
   constructor(
     private prisma: PrismaService,
-    private stripeService: StripeService,
     private paystackService: PaystackService,
     private flutterwaveService: FlutterwaveService,
   ) {}
@@ -58,9 +56,7 @@ export class SubscriptionsService {
     }
 
     try {
-      if (subscription.gateway === 'stripe' && subscription.gatewaySubscriptionId) {
-        await this.cancelStripeSubscription(subscription.gatewaySubscriptionId);
-      } else if (subscription.gateway === 'paystack' && subscription.gatewaySubscriptionId) {
+      if (subscription.gateway === 'paystack' && subscription.gatewaySubscriptionId) {
         await this.cancelPaystackSubscription(subscription.gatewaySubscriptionId);
       } else if (subscription.gateway === 'flutterwave' && subscription.gatewaySubscriptionId) {
         await this.cancelFlutterwaveSubscription(subscription.gatewaySubscriptionId);
@@ -83,17 +79,6 @@ export class SubscriptionsService {
     } catch (error: any) {
       throw new BadRequestException(`Failed to cancel subscription: ${error.message}`);
     }
-  }
-
-  private async cancelStripeSubscription(subscriptionId: string) {
-    const config = await this.prisma.platformConfig.findFirst();
-    if (!config?.stripeSecretKey) {
-      throw new BadRequestException('Stripe is not configured');
-    }
-
-    const Stripe = require('stripe');
-    const stripe = new Stripe(config.stripeSecretKey, { apiVersion: '2024-06-20' });
-    await stripe.subscriptions.cancel(subscriptionId);
   }
 
   private async cancelPaystackSubscription(subscriptionCode: string) {
@@ -149,9 +134,7 @@ export class SubscriptionsService {
     const proration = this.calculateProration(subscription, newPlan);
 
     try {
-      if (subscription.gateway === 'stripe' && subscription.gatewaySubscriptionId) {
-        await this.upgradeStripeSubscription(subscription.gatewaySubscriptionId, newPlan.price, proration.proratedAmount);
-      } else if (subscription.gateway === 'paystack' && subscription.gatewaySubscriptionId) {
+      if (subscription.gateway === 'paystack' && subscription.gatewaySubscriptionId) {
         await this.createPaystackUpgradeInvoice(email, proration.proratedAmount, subscription.productId, newPlan.id);
       }
 
@@ -198,32 +181,6 @@ export class SubscriptionsService {
     };
   }
 
-  private async upgradeStripeSubscription(subscriptionId: string, newPrice: number, proratedAmount: number) {
-    const config = await this.prisma.platformConfig.findFirst();
-    if (!config?.stripeSecretKey) {
-      throw new BadRequestException('Stripe is not configured');
-    }
-
-    const Stripe = require('stripe');
-    const stripe = new Stripe(config.stripeSecretKey);
-    
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const itemId = subscription.items.data[0].id;
-    
-    await stripe.subscriptions.update(subscriptionId, {
-      items: [{
-        id: itemId,
-        price_data: {
-          currency: 'usd',
-          product_data: { name: 'SAABIZ Subscription' },
-          unit_amount: Math.round(newPrice * 100),
-          recurring: { interval: subscription.items.data[0].price.recurring.interval },
-        },
-      }],
-      proration_behavior: 'create_prorations',
-    });
-  }
-
   private async createPaystackUpgradeInvoice(email: string, amount: number, productId: string, planId: string) {
     const reference = `upgrade_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const Paystack = require('axios');
@@ -266,5 +223,84 @@ export class SubscriptionsService {
       },
       orderBy: { price: 'asc' },
     });
+  }
+
+  async handlePaymentFailure(subscriptionId: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const gracePeriodDays = 7;
+    const graceUntil = new Date();
+    graceUntil.setDate(graceUntil.getDate() + gracePeriodDays);
+
+    await this.prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        status: 'IN_GRACE_PERIOD',
+        paymentFailedAt: new Date(),
+        graceUntil,
+      },
+    });
+
+    return {
+      message: 'Payment failed. Subscription is now in grace period.',
+      graceUntil,
+      status: 'IN_GRACE_PERIOD',
+    };
+  }
+
+  async checkAndUpdateExpiredGracePeriods() {
+    const expiredSubscriptions = await this.prisma.subscription.findMany({
+      where: {
+        status: 'IN_GRACE_PERIOD',
+        graceUntil: {
+          lt: new Date(),
+        },
+      },
+    });
+
+    for (const sub of expiredSubscriptions) {
+      await this.prisma.subscription.update({
+        where: { id: sub.id },
+        data: {
+          status: 'CANCELED',
+        },
+      });
+
+      await this.prisma.license.updateMany({
+        where: { subscriptionId: sub.id },
+        data: { active: false },
+      });
+    }
+
+    return {
+      processed: expiredSubscriptions.length,
+      message: `Deactivated ${expiredSubscriptions.length} subscriptions after grace period`,
+    };
+  }
+
+  async retryPayment(subscriptionId: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      include: { plan: true, product: true },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    if (subscription.status !== 'IN_GRACE_PERIOD') {
+      throw new BadRequestException('Subscription is not in grace period');
+    }
+
+    return {
+      message: 'Payment retry initiated. Please check your email for payment link.',
+      subscriptionId,
+    };
   }
 }

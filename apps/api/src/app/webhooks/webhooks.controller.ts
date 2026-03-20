@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, RawBodyRequest, Req } from '@nestjs/common';
+import { Controller, Post, Body, Headers, Req, RawBodyRequest } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 
 @Controller('webhooks')
@@ -13,10 +13,5 @@ export class WebhooksController {
   @Post('flutterwave')
   async handleFlutterwaveWebhook(@Headers('verif-hash') signature: string, @Body() payload: any) {
     return this.webhooksService.handleFlutterwaveWebhook(signature, payload);
-  }
-
-  @Post('stripe')
-  async handleStripeWebhook(@Headers('stripe-signature') signature: string, @Req() req: RawBodyRequest<Request>) {
-    return this.webhooksService.handleStripeWebhook(signature, req.rawBody!);
   }
 }

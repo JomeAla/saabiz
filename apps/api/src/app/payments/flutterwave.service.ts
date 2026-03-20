@@ -150,4 +150,19 @@ export class FlutterwaveService {
       throw error;
     }
   }
+
+  async refund(transactionId: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.post(
+        `${this.baseUrl}/refunds`,
+        { transaction_id: transactionId },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Flutterwave Refund Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
 }

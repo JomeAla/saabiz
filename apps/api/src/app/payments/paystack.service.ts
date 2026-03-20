@@ -143,4 +143,19 @@ export class PaystackService {
       throw error;
     }
   }
+
+  async refund(reference: string) {
+    try {
+      const headers = await this.getHeaders();
+      const response = await axios.post(
+        `${this.baseUrl}/refund`,
+        { transaction: reference },
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Paystack Refund Error: ${error.message}`, error.response?.data);
+      throw error;
+    }
+  }
 }

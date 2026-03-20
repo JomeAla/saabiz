@@ -4,11 +4,10 @@ import { PaymentsService } from './payments.service';
 import { PrismaService } from '../prisma.service';
 import { PaystackService } from './paystack.service';
 import { FlutterwaveService } from './flutterwave.service';
-import { StripeService } from './stripe.service';
 
 @Module({
   controllers: [PaymentsController],
-  providers: [PaymentsService, PrismaService, PaystackService, FlutterwaveService, StripeService],
-  exports: [PaymentsService, PaystackService, FlutterwaveService, StripeService],
+  providers: [PaymentsService, PrismaService, PaystackService, FlutterwaveService],
+  exports: [PaymentsService, PaystackService, FlutterwaveService],
 })
 export class PaymentsModule {}

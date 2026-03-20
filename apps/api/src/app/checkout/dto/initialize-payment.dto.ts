@@ -11,7 +11,7 @@ export class InitializePaymentDto {
   planId!: string;
 
   @IsString()
-  @IsIn(['paystack', 'flutterwave', 'stripe'])
+  @IsIn(['paystack', 'flutterwave'])
   gateway!: string;
 
   @IsString()
@@ -25,4 +25,8 @@ export class InitializePaymentDto {
   @IsString()
   @IsOptional()
   refCode?: string;
+
+  @IsString()
+  @IsOptional()
+  countryCode?: string;
 }

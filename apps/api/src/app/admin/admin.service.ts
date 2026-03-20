@@ -263,4 +263,52 @@ export class AdminService {
       take: 100,
     });
   }
+
+  async refundTransaction(transactionId: string, reason?: string) {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    if (transaction.status === 'refunded') {
+      throw new BadRequestException('Transaction already refunded');
+    }
+
+    if (transaction.status !== 'success') {
+      throw new BadRequestException('Can only refund successful transactions');
+    }
+
+    try {
+      let refundResult;
+      if (transaction.gateway === 'paystack') {
+        refundResult = await this.paystackService.refund(transaction.reference);
+      } else if (transaction.gateway === 'flutterwave') {
+        refundResult = await this.flutterwaveService.refund(transaction.reference);
+      } else {
+        throw new BadRequestException('Unsupported payment gateway');
+      }
+
+      await this.prisma.transaction.update({
+        where: { id: transactionId },
+        data: { status: 'refunded' },
+      });
+
+      const license = await this.prisma.license.findFirst({
+        where: { transactionId },
+      });
+      if (license) {
+        await this.prisma.license.update({
+          where: { id: license.id },
+          data: { active: false },
+        });
+      }
+
+      return { success: true, refundId: refundResult?.id, reason };
+    } catch (error: any) {
+      throw new BadRequestException(`Refund failed: ${error.message}`);
+    }
+  }
 }

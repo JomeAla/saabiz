@@ -6,8 +6,8 @@ import { CreateAffiliateLinkDto, UpdateAffiliateProfileDto } from './dto/affilia
 export class AffiliatesService {
   constructor(private prisma: PrismaService) {}
 
-  async getAffiliateProfile(userId: string) {
-    let affiliate = await this.prisma.affiliate.findUnique({
+  async getAffiliateProfile(userId: string): Promise<any> {
+    let affiliate: any = await this.prisma.affiliate.findUnique({
       where: { userId },
       include: {
         links: {
@@ -36,8 +36,12 @@ export class AffiliatesService {
           affiliateCode: code,
         },
         include: {
-          links: true,
-          commissions: true,
+          links: {
+            include: { product: true }
+          },
+          commissions: {
+            include: { product: true }
+          },
         },
       });
     }
@@ -90,7 +94,6 @@ export class AffiliatesService {
       where: { affiliateId: affiliate.id },
       include: {
         product: true,
-        _count: { select: { clicks: true, conversions: true } }
       },
     });
   }

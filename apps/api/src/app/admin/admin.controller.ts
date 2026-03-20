@@ -56,4 +56,9 @@ export class AdminController {
   ) {
     return this.adminService.getTransactions({ gateway, status, startDate, endDate });
   }
+
+  @Post('transactions/:id/refund')
+  async refundTransaction(@Param('id') id: string, @Body() body: { reason?: string }) {
+    return this.adminService.refundTransaction(id, body.reason);
+  }
 }

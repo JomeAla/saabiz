@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { api, getErrorMessage } from './api';
+import { api, getErrorMessage } from '../lib/api';
 
 interface UseApiState<T> {
   data: T | null;

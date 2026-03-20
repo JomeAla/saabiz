@@ -1,7 +1,11 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
-import { DollarSign, Check, X, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DollarSign, Check, X, Clock, TrendingUp, ArrowUpRight, Wallet } from 'lucide-react';
+import DataTable from '@/components/ui/DataTable';
 
 interface Payout {
   sellerId: string;
@@ -13,6 +17,19 @@ interface Payout {
   pendingPayout: number;
   availableForPayout: number;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
 
 export default function AdminPayouts() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -71,99 +88,196 @@ export default function AdminPayouts() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
   const totalAvailable = payouts.reduce((sum, p) => sum + p.availableForPayout, 0);
+  const totalPending = payouts.reduce((sum, p) => sum + p.pendingPayout, 0);
+  const totalEarnings = payouts.reduce((sum, p) => sum + p.totalEarnings, 0);
+
+  const columns = [
+    {
+      key: 'seller',
+      header: 'Seller',
+      render: (payout: Payout) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-transparent border border-emerald-500/20 flex items-center justify-center">
+            <Wallet className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <p className="text-white font-medium">{payout.businessName || 'Unnamed Seller'}</p>
+            <p className="text-xs text-gray-500">{payout.email}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'payoutGateway',
+      header: 'Method',
+      render: (payout: Payout) => (
+        <div>
+          <span className="px-2.5 py-1 rounded-lg bg-white/5 text-gray-400 text-sm capitalize">
+            {payout.payoutGateway || 'Not set'}
+          </span>
+          {payout.payoutEmail && (
+            <p className="text-xs text-gray-500 mt-1">{payout.payoutEmail}</p>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'totalEarnings',
+      header: 'Total Earnings',
+      render: (payout: Payout) => (
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-emerald-500" />
+          <span className="text-white font-semibold">{formatCurrency(payout.totalEarnings)}</span>
+        </div>
+      )
+    },
+    {
+      key: 'pendingPayout',
+      header: 'Pending',
+      render: (payout: Payout) => (
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-amber-500" />
+          <span className="text-amber-400 font-medium">{formatCurrency(payout.pendingPayout)}</span>
+        </div>
+      )
+    },
+    {
+      key: 'availableForPayout',
+      header: 'Available',
+      render: (payout: Payout) => (
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-emerald-400" />
+          <span className="text-emerald-400 font-bold">{formatCurrency(payout.availableForPayout)}</span>
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (payout: Payout) => (
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handlePayout(payout.sellerId, 'approve', payout.availableForPayout)}
+            disabled={processing === payout.sellerId || payout.availableForPayout <= 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Approve for payout"
+          >
+            {processing === payout.sellerId ? (
+              <div className="w-4 h-4 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Approve
+              </>
+            )}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handlePayout(payout.sellerId, 'process', payout.pendingPayout)}
+            disabled={processing === payout.sellerId || payout.pendingPayout <= 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white/5 text-gray-300 border border-white/10 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Process payout"
+          >
+            {processing === payout.sellerId ? (
+              <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin" />
+            ) : (
+              <>
+                <DollarSign className="w-4 h-4" />
+                Process
+              </>
+            )}
+          </motion.button>
+        </div>
+      )
+    }
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Seller Payouts</h1>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Total Available for Payout</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(totalAvailable)}</p>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
+    >
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Seller Payouts</h1>
+          <p className="text-gray-500 mt-1">Manage and process seller payment requests</p>
         </div>
-      </div>
-
-      {message && (
-        <div className={`p-4 rounded-lg ${
-          message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-        }`}>
-          {message.text}
+        <div className="glass-card px-4 py-2 rounded-xl flex items-center gap-2">
+          <span className="text-sm text-gray-400">Available:</span>
+          <DollarSign className="w-4 h-4 text-emerald-400" />
+          <span className="text-white font-bold">{formatCurrency(totalAvailable)}</span>
         </div>
-      )}
+      </motion.div>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seller</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payout Method</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Earnings</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pending</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Available</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {payouts.map((payout) => (
-              <tr key={payout.sellerId} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <span className="font-medium text-gray-900">{payout.businessName || 'Unnamed'}</span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{payout.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-500 capitalize">
-                  {payout.payoutGateway || 'Not set'}
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {formatCurrency(payout.totalEarnings)}
-                </td>
-                <td className="px-6 py-4 text-sm text-yellow-600">
-                  {formatCurrency(payout.pendingPayout)}
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-green-600">
-                  {formatCurrency(payout.availableForPayout)}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handlePayout(payout.sellerId, 'approve', payout.availableForPayout)}
-                      disabled={processing === payout.sellerId || payout.availableForPayout <= 0}
-                      className="flex items-center px-3 py-1 text-xs text-green-600 border border-green-300 rounded hover:bg-green-50 disabled:opacity-50"
-                      title="Approve for payout"
-                    >
-                      <Check className="w-3 h-3 mr-1" />
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handlePayout(payout.sellerId, 'process', payout.pendingPayout)}
-                      disabled={processing === payout.sellerId || payout.pendingPayout <= 0}
-                      className="flex items-center px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded hover:bg-blue-50 disabled:opacity-50"
-                      title="Process payout"
-                    >
-                      <DollarSign className="w-3 h-3 mr-1" />
-                      Process
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {payouts.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            No payout data available
-          </div>
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`p-4 rounded-xl border ${
+              message.type === 'success' 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                : 'bg-red-500/10 text-red-400 border-red-500/20'
+            }`}
+          >
+            {message.text}
+          </motion.div>
         )}
-      </div>
-    </div>
+      </AnimatePresence>
+
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="glass-card rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Available for Payout</p>
+              <p className="text-2xl font-bold text-gradient-emerald">{formatCurrency(totalAvailable)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Pending Payouts</p>
+              <p className="text-2xl font-bold text-amber-400">{formatCurrency(totalPending)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-gray-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total Earnings</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(totalEarnings)}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <DataTable
+          columns={columns}
+          data={payouts}
+          keyField="sellerId"
+          searchPlaceholder="Search sellers..."
+          emptyMessage="No payout data available"
+          loading={loading}
+        />
+      </motion.div>
+    </motion.div>
   );
 }

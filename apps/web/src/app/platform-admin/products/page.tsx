@@ -47,6 +47,11 @@ export default function AdminProducts() {
       const response = await fetch('/api/admin/products', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!response.ok) {
+        console.error('Failed to fetch products:', response.status);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setProducts(data);
     } catch (error) {

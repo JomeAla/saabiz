@@ -47,6 +47,11 @@ export default function AdminPayouts() {
       const response = await fetch('/api/admin/payouts', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!response.ok) {
+        console.error('Failed to fetch payouts:', response.status);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setPayouts(data);
     } catch (error) {

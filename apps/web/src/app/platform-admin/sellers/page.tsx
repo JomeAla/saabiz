@@ -45,6 +45,11 @@ export default function AdminSellers() {
       const response = await fetch('/api/admin/sellers', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!response.ok) {
+        console.error('Failed to fetch sellers:', response.status);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setSellers(data);
     } catch (error) {

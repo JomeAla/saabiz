@@ -36,6 +36,7 @@ const itemVariants = {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -47,6 +48,12 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/dashboard', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!response.ok) {
+        console.error('Dashboard API error:', response.status);
+        setError(`Failed to load dashboard (${response.status})`);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -68,6 +75,23 @@ export default function AdminDashboard() {
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-10 h-10 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full"
         />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 text-lg font-medium mb-2">Dashboard Error</p>
+          <p className="text-gray-500">{error}</p>
+          <button
+            onClick={() => { setError(null); setLoading(true); fetchStats(); }}
+            className="mt-4 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-sm font-medium hover:bg-emerald-500/20 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -261,7 +285,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="p-6 space-y-4">
-            {stats?.revenueByGateway.map((gw, index) => (
+            {(stats?.revenueByGateway || []).map((gw, index) => (
               <motion.div
                 key={gw.gateway}
                 initial={{ opacity: 0, x: -20 }}
@@ -302,7 +326,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="p-6 space-y-4">
-            {stats?.topSellingProducts.map((product: any, index: number) => (
+            {(stats?.topSellingProducts || []).map((product: any, index: number) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, x: -20 }}
@@ -347,7 +371,7 @@ export default function AdminDashboard() {
         <DataTable
           title="Top Products"
           columns={productColumns}
-          data={stats?.topSellingProducts || []}
+          data={(stats as any)?.topSellingProducts || []}
           keyField="id"
           searchable={false}
           emptyMessage="No products yet"

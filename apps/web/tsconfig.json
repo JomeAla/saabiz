@@ -16,8 +16,11 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@saabiz/api": ["./apps/api/src/main.ts"],
+      "@saabiz/web": ["./apps/web/src/app/page.tsx"]
     },
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",

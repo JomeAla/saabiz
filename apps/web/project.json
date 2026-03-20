@@ -10,7 +10,6 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "apps/web/.next",
-        "main": "apps/web/src/main.ts",
         "tsConfig": "apps/web/tsconfig.json",
         "assets": [
           {
@@ -51,13 +50,6 @@
       "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": ["apps/web/**/*.ts", "apps/web/**/*.tsx"]
-      }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "options": {
-        "jestConfig": "apps/web/jest.config.ts",
-        "passWithNoTests": true
       }
     }
   }

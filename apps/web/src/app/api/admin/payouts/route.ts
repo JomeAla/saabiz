@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+function getToken(authHeader: string | null) {
+  const token = authHeader?.replace('Bearer ', '').trim();
+  if (!token || token === 'null' || token === 'undefined') return null;
+  return token;
+}
+
 export async function GET(request: NextRequest) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '');
-  
+  const token = getToken(request.headers.get('authorization'));
+
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -17,16 +23,22 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    if (!response.ok) {
+      const status = response.status;
+      if (status === 401 || status === 403) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      return NextResponse.json({ error: 'Failed to fetch payouts' }, { status: status });
+    }
+    return NextResponse.json(await response.json());
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch payouts' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '');
-  
+  const token = getToken(request.headers.get('authorization'));
+
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -42,8 +54,14 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    if (!response.ok) {
+      const status = response.status;
+      if (status === 401 || status === 403) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      return NextResponse.json({ error: 'Failed to process payout' }, { status: status });
+    }
+    return NextResponse.json(await response.json());
   } catch (error) {
     return NextResponse.json({ error: 'Failed to process payout' }, { status: 500 });
   }

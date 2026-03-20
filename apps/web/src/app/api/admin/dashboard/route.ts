@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export async function GET(request: NextRequest) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
+  const authHeader = request.headers.get('authorization');
+  const token = authHeader?.replace('Bearer ', '').trim();
+
+  if (!token || token === 'null' || token === 'undefined') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -18,10 +19,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Failed to fetch dashboard' }, { status: response.status });
+      const status = response.status;
+      if (status === 401 || status === 403) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      return NextResponse.json({ error: 'Failed to fetch dashboard' }, { status: status });
     }
     const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch dashboard' }, { status: 500 });
   }

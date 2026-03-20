@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from 'react';
 import { DollarSign, TrendingUp, Package, Users, CreditCard, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -57,7 +55,7 @@ export default function SellerDashboardPage() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/seller/dashboard', {
+      const response = await fetch('http://localhost:3001/api/seller/dashboard', {
         headers: { Authorization: `Bearer ${token}` },
       });
       

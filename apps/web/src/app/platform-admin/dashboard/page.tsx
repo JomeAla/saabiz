@@ -1,11 +1,11 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, Users, Package, CreditCard, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
+
+const API_URL = 'http://localhost:3001';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -38,30 +38,36 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/dashboard', {
+      if (!token) {
+        setError('Not logged in. Please login first.');
+        setLoading(false);
+        return;
+      }
+      const response = await fetch(`${API_URL}/api/admin/dashboard`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
-        console.error('Dashboard API error:', response.status);
         setError(`Failed to load dashboard (${response.status})`);
         setLoading(false);
         return;
       }
       const data = await response.json();
       setStats(data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to connect to API server. Make sure the API is running on port 3001.');
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const formatCurrency = (amount?: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount ?? 0);
@@ -86,7 +92,7 @@ export default function AdminDashboard() {
           <p className="text-red-400 text-lg font-medium mb-2">Dashboard Error</p>
           <p className="text-gray-500">{error}</p>
           <button
-            onClick={() => { setError(null); setLoading(true); fetchStats(); }}
+            onClick={() => fetchStats()}
             className="mt-4 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-sm font-medium hover:bg-emerald-500/20 transition-colors"
           >
             Retry
@@ -285,7 +291,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="p-6 space-y-4">
-            {(stats?.revenueByGateway || []).map((gw, index) => (
+            {(stats?.revenueByGateway || []).map((gw: any, index: number) => (
               <motion.div
                 key={gw.gateway}
                 initial={{ opacity: 0, x: -20 }}

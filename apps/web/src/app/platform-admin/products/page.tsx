@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, AlertTriangle, PauseCircle, PlayCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
@@ -44,7 +42,7 @@ export default function AdminProducts() {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/products', {
+      const response = await fetch('http://localhost:3001/api/admin/products', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
@@ -68,7 +66,7 @@ export default function AdminProducts() {
     setProcessing(productId);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/products/freeze', {
+      const response = await fetch('http://localhost:3001/api/admin/products/freeze', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

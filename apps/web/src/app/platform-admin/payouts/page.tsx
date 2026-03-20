@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DollarSign, Check, X, Clock, TrendingUp, ArrowUpRight, Wallet } from 'lucide-react';
@@ -44,7 +42,7 @@ export default function AdminPayouts() {
   const fetchPayouts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/payouts', {
+      const response = await fetch('http://localhost:3001/api/admin/payouts', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
@@ -67,7 +65,7 @@ export default function AdminPayouts() {
     setProcessing(sellerId);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/payouts', {
+      const response = await fetch('http://localhost:3001/api/admin/payouts', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

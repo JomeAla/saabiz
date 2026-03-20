@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { motion } from 'framer-motion';
 import { Shield, CreditCard, ChevronRight } from 'lucide-react';
 import PaymentConfigForm from '@/components/admin/PaymentConfigForm';

@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Mail, Package, DollarSign, MoreVertical } from 'lucide-react';
@@ -42,7 +40,7 @@ export default function AdminSellers() {
   const fetchSellers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/sellers', {
+      const response = await fetch('http://localhost:3001/api/admin/sellers', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {

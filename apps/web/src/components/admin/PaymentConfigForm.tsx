@@ -30,7 +30,7 @@ export default function PaymentConfigForm() {
     try {
       const response = await fetch('http://localhost:3001/api/admin/payments/config', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
       if (response.ok) {
@@ -54,7 +54,7 @@ export default function PaymentConfigForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(config),
       });

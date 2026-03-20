@@ -12,7 +12,7 @@ SAABIZ is a comprehensive **Merchant of Record (MoR)** and **software monetizati
 ## Features
 
 ### Core Features
-- **Multi-Gateway Payments**: Paystack, Flutterwave, Stripe support
+- **Multi-Gateway Payments**: Paystack and Flutterwave support
 - **Subscription Management**: Monthly/annual billing with proration
 - **License Key Generation**: Secure license key system with validation API
 - **Customer Portal**: Self-service subscription management
@@ -34,7 +34,7 @@ SAABIZ is a comprehensive **Merchant of Record (MoR)** and **software monetizati
 | Database | PostgreSQL 15 |
 | ORM | Prisma 5 |
 | Auth | JWT + Passport |
-| Payments | Paystack, Flutterwave, Stripe |
+| Payments | Paystack, Flutterwave |
 | Styling | Tailwind CSS 4 |
 
 ## Getting Started
@@ -182,20 +182,17 @@ Configure payment gateways via the admin dashboard or directly in the database:
 ```sql
 INSERT INTO "PlatformConfig" (
   "paystackActive", "paystackSecretKey", "paystackPublicKey",
-  "flutterwaveActive", "flutterwaveSecretKey", "flutterwavePublicKey",
-  "stripeActive", "stripeSecretKey", "stripePublicKey"
+  "flutterwaveActive", "flutterwaveSecretKey", "flutterwavePublicKey"
 ) VALUES (
   true, 'sk_live_xxx', 'pk_live_xxx',
-  true, 'FLWSECK-xxx', 'FLWPUBK-xxx',
-  true, 'sk_live_xxx', 'pk_live_xxx'
+  true, 'FLWSECK-xxx', 'FLWPUBK-xxx'
 );
 ```
 
 ### Webhook Endpoints
 
 - `POST /webhooks/paystack` - Paystack webhooks
-- `POST /webhooks/flutterwave` - Flutterwave webhooks  
-- `POST /webhooks/stripe` - Stripe webhooks
+- `POST /webhooks/flutterwave` - Flutterwave webhooks
 
 ## Subscription Flow
 

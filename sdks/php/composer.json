@@ -1,0 +1,46 @@
+{
+    "name": "saabiz/license-sdk",
+    "description": "SAABIZ PHP SDK for license validation and software activation",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Saabiz\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Saabiz\\Tests\\": "tests/"
+        }
+    },
+    "keywords": [
+        "saabiz",
+        "license",
+        "validation",
+        "software",
+        "activation",
+        "wordpress"
+    ],
+    "authors": [
+        {
+            "name": "SAABIZ",
+            "email": "support@saabiz.com"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/saabiz/php-sdk"
+    },
+    "support": {
+        "issues": "https://github.com/saabiz/php-sdk/issues",
+        "wiki": "https://github.com/saabiz/php-sdk/wiki"
+    }
+}

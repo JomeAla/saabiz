@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Users, Settings, LayoutDashboard, LogOut, CreditCard, Hexagon } from 'lucide-react';
+import { Package, Users, Settings, LayoutDashboard, LogOut, CreditCard, Hexagon, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -10,6 +10,7 @@ const navItems = [
   { href: '/seller/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/seller/products', icon: Package, label: 'Products & Plans' },
   { href: '/seller/subscribers', icon: Users, label: 'Subscribers' },
+  { href: '/seller/payouts', icon: DollarSign, label: 'Payouts' },
   { href: '/seller/settings', icon: Settings, label: 'Settings' },
 ];
 

@@ -49,9 +49,16 @@ export default function SubscribersManager() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      setSubscribers(data);
+      
+      if (!res.ok) {
+        setError(data.message || 'Failed to fetch subscribers. Please make sure you are logged in as a Seller.');
+        setSubscribers([]);
+        return;
+      }
+      
+      setSubscribers(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      setError('Failed to fetch subscribers. Make sure you are logged in as a Seller.');
+      setError('Failed to fetch subscribers. ' + (err.message || 'Make sure you are logged in as a Seller.'));
     } finally {
       setLoading(false);
     }

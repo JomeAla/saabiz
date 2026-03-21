@@ -49,7 +49,10 @@ export class ProductsService {
     if (!seller) {
       throw new NotFoundException('Seller not found');
     }
-    return this.prisma.product.findMany({ where: { sellerId: seller.id } });
+    return this.prisma.product.findMany({ 
+      where: { sellerId: seller.id },
+      include: { plans: true }
+    });
   }
 
   async findOne(userId: string, id: string) {

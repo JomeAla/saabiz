@@ -5,14 +5,13 @@ import { PrismaService } from '../prisma.service';
 export class InvoicesService {
   constructor(private prisma: PrismaService) {}
 
-  async getCustomerInvoices() {
-    const userId = (global as any).userId;
+  async getCustomerInvoices(userId: string, userEmail: string) {
     if (!userId) {
       throw new UnauthorizedException('User not authenticated');
     }
 
     const transactions = await this.prisma.transaction.findMany({
-      where: { buyerEmail: (global as any).userEmail },
+      where: { buyerEmail: userEmail },
       include: {
         product: { include: { seller: true } },
         plan: true,
@@ -23,10 +22,7 @@ export class InvoicesService {
     return transactions.map(t => this.generateInvoiceData(t));
   }
 
-  async getInvoiceById(transactionId: string) {
-    const userId = (global as any).userId;
-    const userEmail = (global as any).userEmail;
-    
+  async getInvoiceById(transactionId: string, userId: string, userEmail: string) {
     if (!userId) {
       throw new UnauthorizedException('User not authenticated');
     }

@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -14,12 +14,24 @@ COPY tsconfig.base.json tsconfig.json ./
 
 RUN npx prisma generate --schema=libs/prisma/schema/schema.prisma
 
+RUN pnpm build:api
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/libs/prisma ./libs/prisma
+
+RUN npx prisma generate --schema=libs/prisma/schema/schema.prisma
+
 EXPOSE 3001
 
 ENV PORT=3001
-ENV NODE_ENV=development
-ENV DATABASE_URL="postgresql://postgres:Mylordhelpme12@saabiz-postgres:5432/saabiz?schema=public"
-ENV JWT_SECRET="SAABIZ_JWT_SECRET_2026_KEY"
-ENV NEXT_PUBLIC_API_URL=http://localhost:3001
+ENV NODE_ENV=production
 
-CMD ["npx", "ts-node", "-r", "tsconfig-paths/register", "apps/api/src/main.ts"]
+CMD ["node", "dist/apps/api/main.js"]

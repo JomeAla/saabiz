@@ -1,25 +1,44 @@
 {
   "name": "@saabiz/js-sdk",
   "version": "1.0.0",
-  "description": "SAABIZ JavaScript SDK for license validation and software activation",
+  "description": "SAABIZ JavaScript/TypeScript SDK for license validation, software activation, and updates",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsc",
-    "test": "jest"
+    "build": "tsc && tsc -p tsconfig.esm.json",
+    "build:watch": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "saabiz",
     "license",
     "validation",
     "software",
-    "activation"
+    "activation",
+    "saas",
+    "subscription",
+    "merchant-of-record"
   ],
+  "author": "SAABIZ",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/saabiz/js-sdk"
   },
+  "bugs": {
+    "url": "https://github.com/saabiz/js-sdk/issues"
+  },
+  "homepage": "https://github.com/saabiz/js-sdk#readme",
   "peerDependencies": {
     "axios": ">=0.21.0"
   },

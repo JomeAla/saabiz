@@ -1,7 +1,7 @@
-import { Controller, Get, Param, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Req, Res } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import PDFDocument from 'pdfkit';
 
 @Controller('invoices')
@@ -10,18 +10,21 @@ export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 
   @Get('my-invoices')
-  async getMyInvoices() {
-    return this.invoicesService.getCustomerInvoices();
+  async getMyInvoices(@Req() req: Request) {
+    const user = (req as any).user;
+    return this.invoicesService.getCustomerInvoices(user.userId, user.email);
   }
 
   @Get(':id')
-  async getInvoice(@Param('id') id: string) {
-    return this.invoicesService.getInvoiceById(id);
+  async getInvoice(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user;
+    return this.invoicesService.getInvoiceById(id, user.userId, user.email);
   }
 
   @Get(':id/pdf')
-  async getInvoicePdf(@Param('id') id: string, @Res() res: Response) {
-    const invoice = await this.invoicesService.getInvoiceById(id);
+  async getInvoicePdf(@Param('id') id: string, @Res() res: Response, @Req() req: Request) {
+    const user = (req as any).user;
+    const invoice = await this.invoicesService.getInvoiceById(id, user.userId, user.email);
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.invoiceNumber}.pdf`);
@@ -86,8 +89,9 @@ export class InvoicesController {
   }
 
   @Get(':id/html')
-  async getInvoiceHtml(@Param('id') id: string, @Res() res: Response) {
-    const invoice = await this.invoicesService.getInvoiceById(id);
+  async getInvoiceHtml(@Param('id') id: string, @Res() res: Response, @Req() req: Request) {
+    const user = (req as any).user;
+    const invoice = await this.invoicesService.getInvoiceById(id, user.userId, user.email);
     
     const html = this.generateInvoiceHtml(invoice);
     

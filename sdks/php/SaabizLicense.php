@@ -202,6 +202,94 @@ class SaabizLicense {
     }
     
     /**
+     * Activate the license on this machine
+     * 
+     * @return array
+     */
+    public function activate() {
+        $response = $this->request('/licenses/activate', [
+            'licenseKey' => $this->licenseKey,
+            'productId' => $this->productId,
+            'machineId' => $this->machineId,
+        ]);
+        
+        $this->lastResponse = $response;
+        
+        if (isset($response['success']) && $response['success'] === true) {
+            return [
+                'success' => true,
+                'message' => $response['message'] ?? 'License activated successfully',
+                'activations' => $response['activations'] ?? 1,
+                'maxActivations' => $response['maxActivations'] ?? 1,
+                'expiresAt' => $response['expiresAt'] ?? null,
+            ];
+        }
+        
+        $this->error = $response['message'] ?? 'Activation failed';
+        return [
+            'success' => false,
+            'message' => $this->error,
+            'activations' => $response['activations'] ?? 0,
+            'maxActivations' => $response['maxActivations'] ?? 1,
+        ];
+    }
+    
+    /**
+     * Deactivate the license on this machine
+     * 
+     * @return array
+     */
+    public function deactivate() {
+        $response = $this->request('/licenses/deactivate', [
+            'licenseKey' => $this->licenseKey,
+            'productId' => $this->productId,
+            'machineId' => $this->machineId,
+        ]);
+        
+        $this->lastResponse = $response;
+        
+        if (isset($response['success']) && $response['success'] === true) {
+            return [
+                'success' => true,
+                'message' => $response['message'] ?? 'License deactivated successfully',
+                'activations' => $response['activations'] ?? 0,
+                'maxActivations' => $response['maxActivations'] ?? 1,
+            ];
+        }
+        
+        $this->error = $response['message'] ?? 'Deactivation failed';
+        return [
+            'success' => false,
+            'message' => $this->error,
+            'activations' => $response['activations'] ?? 0,
+            'maxActivations' => $response['maxActivations'] ?? 1,
+        ];
+    }
+    
+    /**
+     * Get activation status
+     * 
+     * @return array
+     */
+    public function getActivationStatus() {
+        $response = $this->request('/licenses/status', [
+            'licenseKey' => $this->licenseKey,
+            'productId' => $this->productId,
+            'machineId' => $this->machineId,
+        ]);
+        
+        $this->lastResponse = $response;
+        
+        return [
+            'isActivated' => $response['isActivated'] ?? false,
+            'activations' => $response['activations'] ?? 0,
+            'maxActivations' => $response['maxActivations'] ?? 1,
+            'expiresAt' => $response['expiresAt'] ?? null,
+            'success' => $response['success'] ?? false,
+        ];
+    }
+    
+    /**
      * Make API request
      * 
      * @param string $endpoint
@@ -303,5 +391,50 @@ if (!function_exists('saabiz_check_updates')) {
         $saabiz = new \Saabiz\SaabizLicense($apiUrl, $licenseKey, $productId);
         $saabiz->setVersion($currentVersion);
         return $saabiz->checkForUpdates();
+    }
+}
+
+if (!function_exists('saabiz_activate_license')) {
+    /**
+     * Activate a SAABIZ license (WordPress helper)
+     * 
+     * @param string $licenseKey
+     * @param string $productId
+     * @param string $apiUrl
+     * @return array
+     */
+    function saabiz_activate_license($licenseKey, $productId, $apiUrl = 'http://localhost:3001/api') {
+        $saabiz = new \Saabiz\SaabizLicense($apiUrl, $licenseKey, $productId);
+        return $saabiz->activate();
+    }
+}
+
+if (!function_exists('saabiz_deactivate_license')) {
+    /**
+     * Deactivate a SAABIZ license (WordPress helper)
+     * 
+     * @param string $licenseKey
+     * @param string $productId
+     * @param string $apiUrl
+     * @return array
+     */
+    function saabiz_deactivate_license($licenseKey, $productId, $apiUrl = 'http://localhost:3001/api') {
+        $saabiz = new \Saabiz\SaabizLicense($apiUrl, $licenseKey, $productId);
+        return $saabiz->deactivate();
+    }
+}
+
+if (!function_exists('saabiz_get_activation_status')) {
+    /**
+     * Get license activation status (WordPress helper)
+     * 
+     * @param string $licenseKey
+     * @param string $productId
+     * @param string $apiUrl
+     * @return array
+     */
+    function saabiz_get_activation_status($licenseKey, $productId, $apiUrl = 'http://localhost:3001/api') {
+        $saabiz = new \Saabiz\SaabizLicense($apiUrl, $licenseKey, $productId);
+        return $saabiz->getActivationStatus();
     }
 }

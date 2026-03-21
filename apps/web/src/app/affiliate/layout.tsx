@@ -3,13 +3,14 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Link as LinkIcon, Percent, DollarSign, LayoutDashboard, LogOut } from 'lucide-react';
+import { Link as LinkIcon, Percent, DollarSign, LayoutDashboard, LogOut, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navItems = [
   { name: 'Dashboard', href: '/affiliate/dashboard', icon: LayoutDashboard },
   { name: 'My Links', href: '/affiliate/links', icon: LinkIcon },
   { name: 'Commissions', href: '/affiliate/commissions', icon: Percent },
+  { name: 'Settings', href: '/affiliate/settings', icon: Settings },
 ];
 
 const container = {

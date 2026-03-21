@@ -71,7 +71,14 @@ export default function ProductManager() {
     try {
       const res = await fetch('/api/products', { headers: getHeaders() });
       const data = await res.json();
-      setProducts(data);
+      
+      if (!res.ok) {
+        setError(data.message || 'Failed to fetch products. Please make sure you are logged in as a Seller.');
+        setProducts([]);
+        return;
+      }
+      
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError('Failed to fetch products. ' + (err.message || ''));
     } finally {

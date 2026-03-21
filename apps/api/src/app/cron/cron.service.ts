@@ -36,6 +36,9 @@ export class CronService {
           lt: new Date(),
         },
       },
+      include: {
+        product: { select: { name: true } },
+      },
     });
 
     for (const sub of expiredSubscriptions) {
@@ -53,7 +56,8 @@ export class CronService {
 
       this.notificationsService.sendSubscriptionCanceled(
         sub.customerEmail,
-        sub.productId
+        sub.product.name,
+        sub.graceUntil || new Date()
       ).catch(err => this.logger.error('Failed to send cancellation email', err));
     }
 
@@ -79,7 +83,7 @@ export class CronService {
       this.notificationsService.sendEmail({
         to: sub.customerEmail,
         subject: `Your ${sub.product.name} subscription renews tomorrow`,
-        body: `Your subscription will automatically renew tomorrow. Amount: $${sub.product.name}`
+        body: `Your subscription will automatically renew tomorrow. Please ensure your payment method is up to date.`
       }).catch(err => this.logger.error('Failed to send renewal reminder', err));
     }
 
@@ -114,5 +118,214 @@ export class CronService {
   @Cron(CronExpression.EVERY_WEEK)
   async generateWeeklyReports() {
     this.logger.log('Generating weekly analytics reports...');
+    
+    try {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      
+      const [
+        totalTransactions,
+        totalRevenue,
+        newSubscriptions,
+        newLicenses,
+        topProducts,
+        topAffiliates,
+      ] = await Promise.all([
+        this.getTransactionCount(weekAgo),
+        this.getTotalRevenue(weekAgo),
+        this.getNewSubscriptions(weekAgo),
+        this.getNewLicenses(weekAgo),
+        this.getTopProducts(weekAgo),
+        this.getTopAffiliates(weekAgo),
+      ]);
+
+      const report = {
+        period: {
+          start: weekAgo,
+          end: new Date(),
+          generatedAt: new Date(),
+        },
+        transactions: totalTransactions,
+        revenue: totalRevenue,
+        newSubscriptions,
+        newLicenses,
+        topProducts,
+        topAffiliates,
+      };
+
+      this.logger.log(`Weekly report generated: ${totalTransactions} transactions, $${totalRevenue} revenue`);
+
+      await this.sendWeeklyReportEmails(report);
+
+      return report;
+    } catch (error) {
+      this.logger.error('Failed to generate weekly report', error);
+    }
+  }
+
+  private async getTransactionCount(since: Date) {
+    return this.prisma.transaction.count({
+      where: { createdAt: { gte: since } },
+    });
+  }
+
+  private async getTotalRevenue(since: Date) {
+    const result = await this.prisma.transaction.aggregate({
+      where: { 
+        createdAt: { gte: since },
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+    });
+    return result._sum.amount || 0;
+  }
+
+  private async getNewSubscriptions(since: Date) {
+    return this.prisma.subscription.count({
+      where: { createdAt: { gte: since } },
+    });
+  }
+
+  private async getNewLicenses(since: Date) {
+    return this.prisma.license.count();
+  }
+
+  private async getTopProducts(since: Date) {
+    const products = await this.prisma.transaction.groupBy({
+      by: ['productId'],
+      where: { 
+        createdAt: { gte: since },
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+      _count: true,
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 5,
+    });
+
+    const productIds = products.map(p => p.productId);
+    const productDetails = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true },
+    });
+
+    const productMap = new Map(productDetails.map(p => [p.id, p.name]));
+
+    return products.map(p => ({
+      productId: p.productId,
+      productName: productMap.get(p.productId) || 'Unknown',
+      transactionCount: p._count,
+      revenue: p._sum.amount || 0,
+    }));
+  }
+
+  private async getTopAffiliates(since: Date) {
+    const affiliates = await this.prisma.affiliateCommission.groupBy({
+      by: ['affiliateId'],
+      where: { 
+        createdAt: { gte: since },
+        status: 'PAID',
+      },
+      _sum: { amount: true },
+      _count: true,
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 5,
+    });
+
+    const affiliateIds = affiliates.map(a => a.affiliateId);
+    const affiliateDetails = await this.prisma.affiliate.findMany({
+      where: { id: { in: affiliateIds } },
+      select: { id: true, affiliateCode: true, user: { select: { email: true } } },
+    });
+
+    const affiliateMap = new Map(affiliateDetails.map(a => [a.id, a]));
+
+    return affiliates.map(a => {
+      const details = affiliateMap.get(a.affiliateId);
+      return {
+        affiliateId: a.affiliateId,
+        code: details?.affiliateCode || 'Unknown',
+        email: details?.user?.email || 'Unknown',
+        commissionCount: a._count,
+        commissionAmount: a._sum.amount || 0,
+      };
+    });
+  }
+
+  private async sendWeeklyReportEmails(report: any) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { email: true },
+    });
+
+    const html = this.generateReportHtml(report);
+
+    for (const admin of admins) {
+      await this.notificationsService.sendEmail({
+        to: admin.email,
+        subject: `Weekly SAABIZ Report - ${new Date().toLocaleDateString()}`,
+        html,
+      }).catch(err => this.logger.error(`Failed to send report to ${admin.email}`, err));
+    }
+  }
+
+  private generateReportHtml(report: any): string {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
+    .stat-card { background: #f9fafb; padding: 15px; border-radius: 8px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: bold; color: #059669; }
+    .stat-label { font-size: 12px; color: #6b7280; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background: #f3f4f6; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>SAABIZ Weekly Report</h1>
+    <p>${report.period.start.toLocaleDateString()} - ${report.period.end.toLocaleDateString()}</p>
+  </div>
+  
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value">${report.transactions}</div>
+      <div class="stat-label">Transactions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">$${report.revenue.toFixed(2)}</div>
+      <div class="stat-label">Revenue</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${report.newSubscriptions}</div>
+      <div class="stat-label">New Subscriptions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${report.newLicenses}</div>
+      <div class="stat-label">New Licenses</div>
+    </div>
+  </div>
+
+  <h3>Top Products</h3>
+  <table>
+    <tr><th>Product</th><th>Transactions</th><th>Revenue</th></tr>
+    ${report.topProducts.map((p: any) => `<tr><td>${p.productName}</td><td>${p.transactionCount}</td><td>$${p.revenue.toFixed(2)}</td></tr>`).join('')}
+  </table>
+
+  <h3>Top Affiliates</h3>
+  <table>
+    <tr><th>Code</th><th>Commissions</th><th>Amount</th></tr>
+    ${report.topAffiliates.map((a: any) => `<tr><td>${a.code}</td><td>${a.commissionCount}</td><td>$${a.commissionAmount.toFixed(2)}</td></tr>`).join('')}
+  </table>
+
+  <p style="text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px;">
+    Generated by SAABIZ Platform
+  </p>
+</body>
+</html>`;
   }
 }

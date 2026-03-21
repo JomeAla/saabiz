@@ -165,15 +165,16 @@ model Transaction {
 }
 
 model Plan {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  name      String
-  price     Float
-  interval  Interval @default(ONETIME)
-  isDefault Boolean  @default(false)
-  transactions Transaction[]
-  subscriptions Subscription[]
+  id             String   @id @default(uuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  name           String
+  price          Float
+  interval       Interval @default(ONETIME)
+  isDefault      Boolean  @default(false)
+  maxActivations Int      @default(1)  // 1 = single site, 2+ = multi-site, 0 = unlimited
+  transactions   Transaction[]
+  subscriptions  Subscription[]
 }
 
 model Subscription {
@@ -206,17 +207,19 @@ enum SubscriptionStatus {
 }
 
 model License {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  key       String   @unique
-  active    Boolean  @default(true)
-  expiresAt DateTime?
-  buyerEmail String?
-  transactionId String? @unique
-  transaction  Transaction? @relation(fields: [transactionId], references: [id])
+  id             String   @id @default(uuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  key            String   @unique
+  active         Boolean  @default(true)
+  expiresAt      DateTime?
+  buyerEmail     String?
+  transactionId  String?  @unique
+  transaction    Transaction? @relation(fields: [transactionId], references: [id])
   subscriptionId String?
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  machineId      String?  // Current activated machine ID
+  activations    Int      @default(0)  // Number of times activated (for tracking)
 }
 
 model AuditLog {

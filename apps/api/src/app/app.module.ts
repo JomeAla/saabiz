@@ -40,7 +40,7 @@ import { EventsModule } from './events/events.module';
     InvoicesModule,
     NotificationsModule,
     TaxModule,
-    // CronModule
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

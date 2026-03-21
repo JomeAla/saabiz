@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -14,9 +14,22 @@ COPY tsconfig.base.json tsconfig.json ./
 
 RUN npx prisma generate --schema=libs/prisma/schema/schema.prisma
 
+RUN pnpm build:web
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+COPY --from=builder /app/apps/web/.next ./.next
+COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+
 EXPOSE 3000
 
-ENV NODE_ENV=development
-ENV NEXT_PUBLIC_API_URL=http://localhost:3001
+ENV NODE_ENV=production
+ENV PORT=3000
 
-CMD ["pnpm", "run", "dev:web"]
+CMD ["pnpm", "run", "start"]

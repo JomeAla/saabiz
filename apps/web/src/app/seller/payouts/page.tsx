@@ -50,12 +50,12 @@ export default function SellerPayouts() {
     setError(null);
     try {
       const token = localStorage.getItem('token') || '';
-      
+
       const [settingsRes, payoutsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/seller/settings`, {
+        fetch('/api/seller/settings', {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/admin/payouts`, {
+        fetch('/api/admin/payouts', {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -152,7 +152,7 @@ export default function SellerPayouts() {
                   <span className="text-sm text-gray-400">Total Earnings</span>
                 </div>
                 <p className="text-3xl font-bold text-white">
-                  ${(summary?.totalEarnings || 0).toFixed(2)}
+                  ₦{(summary?.totalEarnings || 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function SellerPayouts() {
                   <span className="text-sm text-gray-400">Pending Payout</span>
                 </div>
                 <p className="text-3xl font-bold text-amber-400">
-                  ${(summary?.pendingPayout || 0).toFixed(2)}
+                  ₦{(summary?.pendingPayout || 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function SellerPayouts() {
                   <span className="text-sm text-gray-400">Total Paid Out</span>
                 </div>
                 <p className="text-3xl font-bold text-blue-400">
-                  ${(summary?.totalPaidOut || 0).toFixed(2)}
+                  ₦{(summary?.totalPaidOut || 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function SellerPayouts() {
                               <span className="font-mono text-sm text-white">{payout.reference}</span>
                             </td>
                             <td className="py-4 px-4">
-                              <span className="font-bold text-emerald-400">${payout.amount.toFixed(2)}</span>
+                              <span className="font-bold text-emerald-400">₦{payout.amount.toFixed(2)}</span>
                             </td>
                             <td className="py-4 px-4">
                               {getStatusBadge(payout.status)}
@@ -275,7 +275,7 @@ export default function SellerPayouts() {
                   </div>
                   <div className="flex justify-between items-center p-3 rounded-xl bg-white/[0.02]">
                     <span className="text-sm text-gray-400">Minimum Payout</span>
-                    <span className="text-sm font-medium text-white">$50.00</span>
+                    <span className="text-sm font-medium text-white">₦50.00</span>
                   </div>
                   <div className="flex justify-between items-center p-3 rounded-xl bg-white/[0.02]">
                     <span className="text-sm text-gray-400">Payout Schedule</span>

@@ -65,7 +65,7 @@ const features = [
 ];
 
 const stats = [
-  { value: '$10M+', label: 'Processed Annually', icon: CreditCard },
+  { value: '₦10M+', label: 'Processed Annually', icon: CreditCard },
   { value: '99.9%', label: 'Uptime SLA', icon: Shield },
   { value: '180+', label: 'Countries', icon: Globe },
   { value: '50K+', label: 'Developers', icon: Users },
@@ -82,7 +82,7 @@ const plans = [
   },
   {
     name: 'Growth',
-    price: '$49',
+    price: '₦49',
     period: '/month',
     description: 'For growing software businesses',
     features: ['Unlimited products', '3% platform fee', 'Priority support', 'Advanced analytics', 'Custom domain'],
@@ -103,7 +103,7 @@ const testimonials = [
   {
     name: 'Marcus Chen',
     role: 'Founder, DevTools Pro',
-    content: 'Saarbiz cut our payment infrastructure time from weeks to hours. The tax compliance alone is worth it.',
+    content: 'Saabiz cut our payment infrastructure time from weeks to hours. The tax compliance alone is worth it.',
     avatar: 'MC',
     rating: 5,
   },
@@ -182,7 +182,7 @@ export default function HomePage() {
               >
                 <Box className="w-5 h-5 text-white" strokeWidth={2} />
               </div>
-              <span className="text-xl font-semibold text-white">Saarbiz</span>
+              <span className="text-xl font-semibold text-white">Saabiz</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -367,7 +367,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1 flex justify-center">
                     <div className="px-4 py-1 rounded-full text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--gray-400)' }}>
-                      saarbiz.com/dashboard
+                      saabiz.com/dashboard
                     </div>
                   </div>
                 </div>
@@ -382,7 +382,7 @@ export default function HomePage() {
                         +24.5%
                       </span>
                     </div>
-                    <div className="text-3xl font-bold text-white mb-4">$127,450.00</div>
+                    <div className="text-3xl font-bold text-white mb-4">₦127,450.00</div>
                     {/* Chart */}
                     <div className="flex items-end gap-1 h-16">
                       {[40, 65, 45, 80, 55, 90, 70, 95, 60, 85, 75, 100].map((h, i) => (
@@ -406,7 +406,7 @@ export default function HomePage() {
                     </div>
                     <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
                       <div className="text-sm text-gray-400 mb-1">MRR</div>
-                      <div className="text-xl font-semibold text-white">$18,250</div>
+                      <div className="text-xl font-semibold text-white">₦18,250</div>
                     </div>
                   </div>
                 </div>
@@ -425,7 +425,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="text-xs text-gray-400">New Sale</div>
-                    <div className="text-sm font-medium text-white">+$299.00</div>
+                    <div className="text-sm font-medium text-white">+₦299.00</div>
                   </div>
                 </div>
               </motion.div>
@@ -591,17 +591,17 @@ export default function HomePage() {
                   <span className="text-xs text-gray-500">payment.ts</span>
                 </div>
                 <pre className="p-6 text-sm overflow-x-auto font-mono text-gray-400 leading-relaxed">
-{`import { Saarbiz } from '@saarbiz/sdk';
+{`import { Saabiz } from '@saabiz/sdk';
 
 // Initialize payment
-const payment = await saarbiz.payments.create({
+const payment = await saabiz.payments.create({
   amount: 4900,
-  currency: 'usd',
+  currency: 'ngn',
   customer: 'user_123',
 });
 
 // Generate license
-const license = await saarbiz.licenses.create({
+const license = await saabiz.licenses.create({
   product: 'pro_version',
   customer: payment.customer,
 });
@@ -779,7 +779,7 @@ console.log(\`License: \${license.key}\`);`}
                 >
                   <Box className="w-5 h-5 text-white" strokeWidth={2} />
                 </div>
-                <span className="text-xl font-semibold text-white">Saarbiz</span>
+                <span className="text-xl font-semibold text-white">Saabiz</span>
               </div>
               <p className="body-sm text-gray-400 max-w-xs">
                 The complete merchant of record platform for software developers.
@@ -807,7 +807,7 @@ console.log(\`License: \${license.key}\`);`}
           </div>
           
           <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderColor: 'var(--gray-800)' }}>
-            <p className="text-sm text-gray-500">2026 Saarbiz. All rights reserved.</p>
+            <p className="text-sm text-gray-500">2026 Saabiz. All rights reserved.</p>
             <div className="flex gap-6">
               <Link href="#" className="text-gray-400 hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>

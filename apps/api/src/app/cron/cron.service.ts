@@ -19,8 +19,82 @@ export class CronService {
     const result = await this.processExpiredGracePeriods();
     this.logger.log(`Dunning complete: ${result.processed} subscriptions cancelled`);
 
+    const escalated = await this.processDunningEmails();
+    this.logger.log(`Dunning emails sent: ${escalated.sent} (skipped ${escalated.skipped})`);
+
     const failedPayments = await this.checkUpcomingRenewals();
     this.logger.log(`Found ${failedPayments.length} upcoming renewals to process`);
+  }
+
+  /**
+   * Escalate dunning emails for subscriptions in grace period:
+   * day 0   — payment-failed email (sent at webhook time)
+   * day 3   — reminder
+   * day 6   — final warning
+   * day 7   — canceled by processExpiredGracePeriods
+   */
+  private async processDunningEmails() {
+    const now = new Date();
+    const candidates = await this.prisma.subscription.findMany({
+      where: {
+        status: 'IN_GRACE_PERIOD',
+        paymentFailedAt: { not: null },
+        graceUntil: { gt: now },
+      },
+      include: { product: true, plan: true },
+    });
+
+    let sent = 0;
+    let skipped = 0;
+
+    for (const sub of candidates) {
+      const failedAt = sub.paymentFailedAt as Date;
+      const daysSince = (Date.now() - failedAt.getTime()) / (1000 * 60 * 60 * 24);
+
+      const reminderSent = sub.lastDunningSentAt ? sub.lastDunningSentAt > failedAt : false;
+      const finalSent = sub.lastDunningSentAt
+        ? sub.lastDunningSentAt.getTime() >= failedAt.getTime() + 6 * 24 * 60 * 60 * 1000
+        : false;
+
+      let shouldSend: 'reminder' | 'final' | null = null;
+
+      if (daysSince >= 6 && !finalSent) {
+        shouldSend = 'final';
+      } else if (daysSince >= 3 && !reminderSent) {
+        shouldSend = 'reminder';
+      }
+
+      if (!shouldSend) {
+        skipped += 1;
+        continue;
+      }
+
+      const success = await this.notificationsService
+        .sendDunningReminderEmail(
+          sub.customerEmail,
+          sub.product.name,
+          sub.plan.price,
+          sub.graceUntil || now,
+          shouldSend === 'final',
+        )
+        .then((r) => r.success)
+        .catch((err) => {
+          this.logger.error(`Failed to send dunning email for ${sub.id}`, err);
+          return false;
+        });
+
+      if (success) {
+        await this.prisma.subscription.update({
+          where: { id: sub.id },
+          data: { lastDunningSentAt: new Date() },
+        });
+        sent += 1;
+      } else {
+        skipped += 1;
+      }
+    }
+
+    return { sent, skipped };
   }
 
   @Cron(CronExpression.EVERY_HOUR)

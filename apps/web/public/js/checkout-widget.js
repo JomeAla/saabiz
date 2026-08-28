@@ -9,8 +9,13 @@
 (function() {
   'use strict';
 
-  const SAABIZ_API_URL = 'http://localhost:3001/api';
-  const SAABIZ_WEB_URL = 'http://localhost:3000';
+  const scriptTag = typeof document !== 'undefined' ? document.currentScript : null;
+  const scriptUrl = scriptTag && scriptTag.src ? new URL(scriptTag.src) : null;
+  const SCRIPT_ORIGIN = scriptUrl ? scriptUrl.origin : null;
+  const SCRIPT_API_URL = scriptTag && scriptTag.dataset.apiUrl ? scriptTag.dataset.apiUrl : null;
+
+  const SAABIZ_API_URL = SCRIPT_API_URL || (SCRIPT_ORIGIN ? `${SCRIPT_ORIGIN}/api` : 'http://localhost:3001/api');
+  const SAABIZ_WEB_URL = SCRIPT_ORIGIN || 'http://localhost:3000';
 
   class SaabizCheckoutWidget {
     constructor(element, options) {

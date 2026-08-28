@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { Link as LinkIcon, Plus, Copy, ExternalLink, MousePointer, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface AffiliateLink {
   id: string;
@@ -41,14 +42,13 @@ export default function AffiliateLinks() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const [linksRes, productsRes] = await Promise.all([
-        fetch('http://localhost:3001/api/affiliates/links', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:3001/api/products', { headers: { Authorization: `Bearer ${token}` } }),
+      const [linksData, productsData] = await Promise.all([
+        api.get<AffiliateLink[]>('/api/affiliates/links'),
+        api.get<any[]>('/api/products'),
       ]);
-      
-      setLinks(await linksRes.json());
-      setProducts(await productsRes.json());
+
+      setLinks(linksData);
+      setProducts(productsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -59,15 +59,7 @@ export default function AffiliateLinks() {
   const createLink = async (productId: string) => {
     setCreating(true);
     try {
-      const token = localStorage.getItem('token');
-      await fetch('http://localhost:3001/api/affiliates/links', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ productId }),
-      });
+      await api.post('/api/affiliates/links', { productId });
       fetchData();
     } catch (error) {
       console.error('Failed to create link:', error);

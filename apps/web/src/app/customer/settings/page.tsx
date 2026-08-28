@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Save, Check, Loader2, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 
 const container = {
   hidden: { opacity: 0 },
@@ -83,27 +84,12 @@ export default function CustomerSettings() {
 
     try {
       const token = localStorage.getItem('token') || '';
-      
-      if (formData.newPassword) {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/reset-password`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              currentPassword: formData.currentPassword,
-              newPassword: formData.newPassword,
-            }),
-          }
-        );
 
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || 'Failed to update password');
-        }
+      if (formData.newPassword) {
+        await api.post('/api/auth/reset-password', {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        });
       }
 
       setMessage({ type: 'success', text: 'Settings saved successfully!' });

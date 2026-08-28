@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { PrismaService } from './app/prisma.service';
+import { TenantService } from './app/tenancy/tenant.service';
 import { LoggerMiddleware } from './app/logger/logger.middleware';
 import rateLimit from 'express-rate-limit';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -9,22 +10,47 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3002'];
+  const tenantService = app.get(TenantService);
+
+  if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production');
+  }
+
+  // Resolve tenant context from the request host for every request
+  app.use(tenantService.runForRequest.bind(tenantService));
+
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim().toLowerCase())
+    .filter(Boolean);
+  const platformHost = tenantService.platformHost;
+
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || corsOrigins.includes(origin) || origin.includes('localhost')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+      if (!origin) return callback(null, true);
+
+      const o = origin.toLowerCase();
+      if (corsOrigins.includes(o)) return callback(null, true);
+
+      try {
+        const host = new URL(origin).hostname.toLowerCase().replace(/^www\./, '');
+        // Wildcard for tenant subdomains of the platform root domain
+        if (host.endsWith(`.${platformHost}`)) return callback(null, true);
+        // Dynamically discovered tenant (custom) domains
+        if (tenantService.getKnownHosts().includes(host)) return callback(null, true);
+      } catch {
+        /* invalid origin format */
       }
+
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Forwarded-Host'],
   });
 
-  // Sentry disabled
-  if (false && process.env.SENTRY_DSN) {
+  // Sentry (enabled when SENTRY_DSN is set)
+  if (process.env.SENTRY_DSN) {
     try {
       const Sentry = require('@sentry/node');
       Sentry.init({
@@ -62,44 +88,68 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
-  app.use(`/${globalPrefix}/health`, (req: any, res: any) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  });
+  app.use(`/${globalPrefix}/health`, (req: any, res: any, next: any) => {
+    const path = req.path || '';
 
-  app.use(`/${globalPrefix}/health/db`, async (req: any, res: any) => {
-    try {
-      const prisma = app.get(PrismaService);
-      await prisma.$queryRaw`SELECT 1`;
-      res.json({ status: 'healthy', database: 'connected', timestamp: new Date().toISOString() });
-    } catch (error) {
-      res.status(503).json({ status: 'unhealthy', database: 'disconnected', timestamp: new Date().toISOString() });
+    if (path === '' || path === '/') {
+      return res.json({ status: 'ok', timestamp: new Date().toISOString() });
     }
+
+    if (path === '/db') {
+      return (async () => {
+        try {
+          const prisma = app.get(PrismaService);
+          await prisma.$queryRaw`SELECT 1`;
+          res.json({ status: 'healthy', database: 'connected', timestamp: new Date().toISOString() });
+        } catch (error) {
+          res.status(503).json({ status: 'unhealthy', database: 'disconnected', timestamp: new Date().toISOString() });
+        }
+      })();
+    }
+
+    if (path === '/redis') {
+      return (async () => {
+        try {
+          const Redis = require('ioredis');
+          const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', { lazyConnect: true });
+          await redis.connect();
+          const pong = await redis.ping();
+          redis.disconnect();
+          res.json({ status: 'healthy', redis: pong === 'PONG' ? 'connected' : 'unknown', timestamp: new Date().toISOString() });
+        } catch (error) {
+          res.status(503).json({ status: 'unhealthy', redis: 'disconnected', timestamp: new Date().toISOString() });
+        }
+      })();
+    }
+
+    next();
   });
 
-  // Swagger disabled due to missing dependency
-  /*
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('SAABIZ API')
-    .setDescription('SAABIZ - Merchant of Record & Software Monetization Platform')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Authentication endpoints')
-    .addTag('products', 'Product management')
-    .addTag('plans', 'Plan management')
-    .addTag('checkout', 'Checkout & payments')
-    .addTag('licenses', 'License validation')
-    .addTag('subscriptions', 'Subscription management')
-    .addTag('webhooks', 'Payment webhooks')
-    .addTag('admin', 'Platform administration')
-    .addTag('affiliates', 'Affiliate system')
-    .addTag('seller', 'Seller dashboard')
-    .build();
-  
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup(`${globalPrefix}/docs`, app, document);
-  */
+  // Swagger documentation
+  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('SAABIZ API')
+      .setDescription('SAABIZ - Multi-domain Merchant of Record & Software Monetization Platform')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('auth', 'Authentication endpoints')
+      .addTag('products', 'Product management')
+      .addTag('plans', 'Plan management')
+      .addTag('checkout', 'Checkout & payments')
+      .addTag('licenses', 'License validation')
+      .addTag('subscriptions', 'Subscription management')
+      .addTag('webhooks', 'Payment webhooks')
+      .addTag('admin', 'Platform administration')
+      .addTag('affiliates', 'Affiliate system')
+      .addTag('seller', 'Seller dashboard')
+      .build();
 
-  const port = process.env.PORT || 3000;
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup(`${globalPrefix}/docs`, app, document);
+    Logger.log(`Swagger docs available at http://localhost:${process.env.PORT || 3001}/${globalPrefix}/docs`, 'Bootstrap');
+  }
+
+  const port = process.env.PORT || 3001;
   await app.listen(port);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`

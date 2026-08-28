@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Loader2, AlertCircle, Package, Check, ChevronRight, ArrowLeft, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface Plan {
   id: string;
@@ -108,17 +109,14 @@ export default function CheckoutPage() {
 
   const fetchData = async () => {
     try {
-      const [productsRes, configRes] = await Promise.all([
-        fetch('http://localhost:3001/api/products/public'),
-        fetch('http://localhost:3001/api/checkout/config'),
+      const [productsData, configData] = await Promise.all([
+        api.get<any>('/api/products/public'),
+        api.get<any>('/api/checkout/config'),
       ]);
-      
-      const productsData = await productsRes.json();
-      const configData = await configRes.json();
-      
+
       setProducts(Array.isArray(productsData) ? productsData : []);
       setActiveConfig(configData);
-      
+
       if (configData.paystackActive) setGateway('paystack');
       else if (configData.flutterwaveActive) setGateway('flutterwave');
     } catch (err) {
@@ -148,30 +146,20 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/checkout/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
-          productId: selectedProduct.id, 
-          planId: selectedPlan.id,
-          gateway 
-        }),
+      const data = await api.post<any>('/api/checkout/initialize', {
+        email,
+        productId: selectedProduct.id,
+        planId: selectedPlan.id,
+        gateway,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        if (gateway === 'paystack') {
-          setPaymentUrl(data.data.authorization_url);
-        } else if (gateway === 'flutterwave') {
-          setPaymentUrl(data.data.link);
-        }
-      } else {
-        setError(data.message || data.error || 'Failed to initialize payment');
+      if (gateway === 'paystack') {
+        setPaymentUrl(data.data.authorization_url);
+      } else if (gateway === 'flutterwave') {
+        setPaymentUrl(data.data.link);
       }
-    } catch (err) {
-      setError('An unexpected error occurred.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to initialize payment');
     } finally {
       setSubmitting(false);
     }
@@ -321,7 +309,7 @@ export default function CheckoutPage() {
                     >
                       <div className="font-semibold text-white group-hover:text-emerald-400">{plan.name}</div>
                       <div className="text-3xl font-bold text-white mt-3">
-                        ${plan.price.toFixed(2)}
+                        ₦{plan.price.toFixed(2)}
                         <span className="text-sm font-normal text-slate-500">/{plan.interval.toLowerCase()}</span>
                       </div>
                     </motion.button>
@@ -360,7 +348,7 @@ export default function CheckoutPage() {
                         <p className="text-sm text-slate-500">{selectedPlan.name}</p>
                       </div>
                       <div className="text-2xl font-bold text-white">
-                        ${selectedPlan.price.toFixed(2)}
+                        ₦{selectedPlan.price.toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -443,7 +431,7 @@ export default function CheckoutPage() {
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <>
-                          <Lock className="w-4 h-4" /> Pay ${selectedPlan.price.toFixed(2)}
+                          <Lock className="w-4 h-4" /> Pay ₦{selectedPlan.price.toFixed(2)}
                         </>
                       )}
                     </button>
@@ -455,7 +443,7 @@ export default function CheckoutPage() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between text-slate-400">
                       <span>{selectedProduct.name} - {selectedPlan.name}</span>
-                      <span className="text-white">${selectedPlan.price.toFixed(2)}</span>
+                      <span className="text-white">₦{selectedPlan.price.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-slate-400">
                       <span>Tax</span>
@@ -464,7 +452,7 @@ export default function CheckoutPage() {
                     <div className="border-t border-white/[0.06] pt-3 mt-3">
                       <div className="flex justify-between text-lg font-bold">
                         <span className="text-white">Total</span>
-                        <span className="text-white">${selectedPlan.price.toFixed(2)}</span>
+                        <span className="text-white">₦{selectedPlan.price.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>

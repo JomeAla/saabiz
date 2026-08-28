@@ -58,6 +58,9 @@ export class SellerController {
   async getDashboard(@Request() req: any) {
     const seller = await this.prisma.seller.findUnique({
       where: { userId: req.user.userId },
+      include: {
+        tenant: { include: { domains: { where: { isPrimary: true } } } },
+      },
     });
 
     if (!seller) {
@@ -103,6 +106,14 @@ export class SellerController {
       successfulTransactions,
       activeSubscriptions,
       recentTransactions,
+      tenant: seller.tenant
+        ? {
+            id: seller.tenant.id,
+            slug: seller.tenant.slug,
+            name: seller.tenant.name,
+            storefrontUrl: seller.tenant.domains[0]?.host || `${seller.tenant.slug}.${process.env.PLATFORM_DOMAIN || 'saabiz.com'}`,
+          }
+        : null,
     };
   }
 

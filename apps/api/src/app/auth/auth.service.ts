@@ -2,20 +2,48 @@ import { Injectable, UnauthorizedException, ConflictException, BadRequestExcepti
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma.service';
 import { RegisterDto, LoginDto, CustomerRegisterDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
 import * as crypto from 'crypto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TenantService } from '../tenancy/tenant.service';
+import { HoneypotsService } from '../honeypots/honeypots.service';
+
+export interface RequestContext {
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
+    private tenantService: TenantService,
+    private honeypots: HoneypotsService
   ) {}
 
-  async register(dto: RegisterDto) {
+  private async isBot(dto: { website?: string }, ctx: RequestContext | undefined) {
+    if (!dto.website) return false;
+    await this.honeypots.recordBotSubmission({
+      form: 'register',
+      email: (dto as any).email,
+      ipAddress: ctx?.ipAddress,
+      userAgent: ctx?.userAgent,
+    });
+    return true;
+  }
+
+  async register(dto: RegisterDto, ctx?: RequestContext) {
+    if (await this.isBot(dto, ctx)) {
+      const payload = { sub: `bot-${crypto.randomBytes(8).toString('hex')}`, email: dto.email, role: Role.SELLER };
+      return {
+        access_token: await this.jwtService.signAsync(payload),
+        user: { id: payload.sub, email: dto.email, role: payload.role, sellerId: null },
+      };
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email }
     });
@@ -45,7 +73,7 @@ export class AuthService {
       }
     });
 
-    const verifyLink = `http://localhost:3000/verify-email?token=${verifyToken}`;
+    const verifyLink = `${this.tenantService.frontendUrl()}/verify-email?token=${verifyToken}`;
     this.notificationsService.sendEmail({
       to: dto.email,
       subject: 'Welcome to SAABIZ - Verify Your Email',
@@ -64,7 +92,15 @@ export class AuthService {
     };
   }
 
-  async registerCustomer(dto: CustomerRegisterDto) {
+  async registerCustomer(dto: CustomerRegisterDto, ctx?: RequestContext) {
+    if (await this.isBot(dto, ctx)) {
+      const payload = { sub: `bot-${crypto.randomBytes(8).toString('hex')}`, email: dto.email, role: Role.CUSTOMER };
+      return {
+        access_token: await this.jwtService.signAsync(payload),
+        user: { id: payload.sub, email: dto.email, role: payload.role },
+      };
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email }
     });
@@ -86,7 +122,7 @@ export class AuthService {
       },
     });
 
-    const verifyLink = `http://localhost:3000/verify-email?token=${verifyToken}`;
+    const verifyLink = `${this.tenantService.frontendUrl()}/verify-email?token=${verifyToken}`;
     this.notificationsService.sendEmail({
       to: dto.email,
       subject: 'Welcome to SAABIZ - Verify Your Email',
@@ -126,13 +162,25 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(email: string) {
+  async forgotPassword(dto: ForgotPasswordDto, ctx?: RequestContext) {
+    const genericMessage = { message: 'If the email exists, a reset link will be sent' };
+
+    if (dto.website) {
+      await this.honeypots.recordBotSubmission({
+        form: 'forgot-password',
+        email: dto.email,
+        ipAddress: ctx?.ipAddress,
+        userAgent: ctx?.userAgent,
+      });
+      return genericMessage;
+    }
+
     const user = await this.prisma.user.findUnique({
-      where: { email }
+      where: { email: dto.email }
     });
 
     if (!user) {
-      return { message: 'If the email exists, a reset link will be sent' };
+      return genericMessage;
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -146,10 +194,10 @@ export class AuthService {
       }
     });
 
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const resetLink = `${this.tenantService.frontendUrl()}/reset-password?token=${resetToken}`;
     
     this.notificationsService.sendEmail({
-      to: email,
+      to: dto.email,
       subject: 'Password Reset Request',
       body: `Click here to reset your password: ${resetLink}\n\nThis link expires in 1 hour.`
     }).catch(err => console.error('Failed to send email:', err));
@@ -225,7 +273,7 @@ export class AuthService {
       data: { emailVerifyToken: verifyToken }
     });
 
-    const verifyLink = `http://localhost:3000/verify-email?token=${verifyToken}`;
+    const verifyLink = `${this.tenantService.frontendUrl()}/verify-email?token=${verifyToken}`;
     
     this.notificationsService.sendEmail({
       to: email,
@@ -239,7 +287,7 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super-secret-key-refresh',
+        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'dev-secret-do-not-use-in-production',
       });
 
       const user = await this.prisma.user.findUnique({
@@ -256,7 +304,7 @@ export class AuthService {
       
       const newRefreshToken = await this.jwtService.signAsync(
         { sub: user.id },
-        { secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super-secret-key-refresh', expiresIn: '7d' }
+        { secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'dev-secret-do-not-use-in-production', expiresIn: '7d' }
       );
 
       return {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { TenancyModule } from './tenancy/tenancy.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaService } from './prisma.service';
 import { PaymentsModule } from './payments/payments.module';
@@ -20,12 +21,15 @@ import { CronModule } from './cron/cron.module';
 import { LoggerModule } from './logger/logger.module';
 import { AuditModule } from './audit/audit.module';
 import { EventsModule } from './events/events.module';
+import { HoneypotsModule } from './honeypots/honeypots.module';
 
 @Module({
   imports: [
+    TenancyModule,
     LoggerModule,
     AuditModule,
     EventsModule,
+    HoneypotsModule,
     AuthModule, 
     PaymentsModule, 
     CheckoutModule, 

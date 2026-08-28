@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Save, Loader2, ShieldCheck, Eye, EyeOff, Check, X, ToggleLeft, ToggleRight } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface PaymentConfig {
   paystackPublicKey?: string;
@@ -28,15 +29,8 @@ export default function PaymentConfigForm() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/payments/config', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setConfig(data);
-      }
+      const data = await api.get<PaymentConfig>('/api/admin/payments/config');
+      setConfig(data);
     } catch (error) {
       console.error('Failed to fetch payment config:', error);
     } finally {
@@ -50,22 +44,10 @@ export default function PaymentConfigForm() {
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/payments/config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(config),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Payment configuration saved successfully!' });
-      } else {
-        setMessage({ type: 'error', text: 'Failed to save payment configuration.' });
-      }
+      await api.post('/api/admin/payments/config', config);
+      setMessage({ type: 'success', text: 'Payment configuration saved successfully!' });
     } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred while saving.' });
+      setMessage({ type: 'error', text: 'Failed to save payment configuration.' });
     } finally {
       setSaving(false);
     }

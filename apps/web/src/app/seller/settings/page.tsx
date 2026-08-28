@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { Settings, Save, Loader2, Building2, CreditCard, AlertCircle, Check, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface SellerSettings {
   businessName: string;
@@ -45,11 +46,7 @@ export default function SellerSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/seller/settings', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
+      const data = await api.get<SellerSettings>('/api/seller/settings');
       if (data.businessName || data.payoutEmail || data.payoutGateway) {
         setSettings(data);
       }
@@ -66,23 +63,10 @@ export default function SellerSettingsPage() {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/seller/settings', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(settings),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Settings saved successfully!' });
-      } else {
-        setMessage({ type: 'error', text: 'Failed to save settings.' });
-      }
+      await api.patch('/api/seller/settings', settings);
+      setMessage({ type: 'success', text: 'Settings saved successfully!' });
     } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred while saving.' });
+      setMessage({ type: 'error', text: 'Failed to save settings.' });
     } finally {
       setSaving(false);
     }

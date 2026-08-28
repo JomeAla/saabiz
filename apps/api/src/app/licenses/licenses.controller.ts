@@ -26,8 +26,11 @@ export class LicensesController {
       expiresAt: '2025-12-31T23:59:59.000Z'
     }
   }})
-  async verifyLicense(@Body() dto: ValidateLicenseDto) {
-    return this.licensesService.validateLicense(dto);
+  async verifyLicense(@Body() dto: ValidateLicenseDto, @Request() req: any) {
+    return this.licensesService.validateLicense(dto, {
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Get('subscribers')
@@ -38,6 +41,26 @@ export class LicensesController {
   @ApiResponse({ status: 200, description: 'List of subscribers' })
   async getSubscribers(@Request() req: any) {
     return this.licensesService.getSubscribersBySeller(req.user.userId);
+  }
+
+  @Post('revoke/:licenseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SELLER, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke a license', description: 'Deactivate a license (and its machine) for one of your products' })
+  @ApiResponse({ status: 200, description: 'License revoked' })
+  async revokeLicense(@Request() req: any, @Param('licenseId') licenseId: string) {
+    return this.licensesService.revokeLicense(req.user.userId, licenseId, req.user.role);
+  }
+
+  @Post('reactivate/:licenseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SELLER, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reactivate a license', description: 'Re-enable a revoked license' })
+  @ApiResponse({ status: 200, description: 'License reactivated' })
+  async reactivateLicense(@Request() req: any, @Param('licenseId') licenseId: string) {
+    return this.licensesService.reactivateLicense(req.user.userId, licenseId, req.user.role);
   }
 
   @Get('my-downloads')
@@ -68,6 +91,8 @@ export class LicensesController {
       planName: l.transaction?.plan?.name,
       expiresAt: l.expiresAt,
       isActive: l.active,
+      machineId: l.machineId,
+      activations: l.activations,
     }));
   }
 

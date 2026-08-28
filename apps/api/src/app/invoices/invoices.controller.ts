@@ -2,7 +2,9 @@ import { Controller, Get, Param, UseGuards, Req, Res } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Response, Request } from 'express';
-import PDFDocument from 'pdfkit';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PDFDocument = require('pdfkit');
 
 @Controller('invoices')
 @UseGuards(JwtAuthGuard)
@@ -64,7 +66,7 @@ export class InvoicesController {
     
     doc.text(invoice.product.name, 50, tableTop + 20);
     doc.text(invoice.plan.name, 250, tableTop + 20, { width: 100 });
-    doc.text(`${invoice.currency} ${invoice.total.toFixed(2)}`, 400, tableTop + 20, { width: 100, align: 'right' });
+    doc.text(`₦${invoice.total.toFixed(2)}`, 400, tableTop + 20, { width: 100, align: 'right' });
 
     if (invoice.product.description) {
       doc.fontSize(8).text(invoice.product.description, 50, tableTop + 35, { width: 500 });
@@ -72,7 +74,7 @@ export class InvoicesController {
 
     doc.moveDown(4);
     doc.fontSize(12);
-    doc.text(`Total: ${invoice.currency} ${invoice.total.toFixed(2)}`, { align: 'right' });
+    doc.text(`Total: ₦${invoice.total.toFixed(2)}`, { align: 'right' });
 
     doc.moveDown(2);
     doc.fontSize(10).text('Payment Details:', { underline: true });
@@ -156,12 +158,12 @@ export class InvoicesController {
         <tr>
           <td>${invoice.product.name}<br><small>${invoice.product.description || ''}</small></td>
           <td>${invoice.plan.name}</td>
-          <td>${invoice.currency} ${invoice.total.toFixed(2)}</td>
+          <td>₦${invoice.total.toFixed(2)}</td>
         </tr>
       </tbody>
     </table>
     <div class="total">
-      <p>Total: ${invoice.currency} ${invoice.total.toFixed(2)}</p>
+      <p>Total: ₦${invoice.total.toFixed(2)}</p>
     </div>
   </div>
 

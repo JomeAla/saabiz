@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = '';
 
 interface ApiError extends Error {
   status?: number;
@@ -22,7 +22,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
     throw error;
   }
-  
+
   try {
     return await response.json();
   } catch {
@@ -35,50 +35,46 @@ function getAuthHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+  return handleResponse<T>(response);
+}
+
 export const api = {
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-    });
-    return handleResponse<T>(response);
+    return request<T>(endpoint);
   },
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    return request<T>(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
       body: data ? JSON.stringify(data) : undefined,
     });
-    return handleResponse<T>(response);
   },
 
   async put<T>(endpoint: string, data: unknown): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    return request<T>(endpoint, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
       body: JSON.stringify(data),
     });
-    return handleResponse<T>(response);
+  },
+
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
+    return request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
   },
 
   async delete<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-    });
-    return handleResponse<T>(response);
+    return request<T>(endpoint, { method: 'DELETE' });
   },
 };
 

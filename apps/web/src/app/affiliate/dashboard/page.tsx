@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { DollarSign, Users, Link as LinkIcon, Copy, Check, Percent, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface AffiliateData {
   affiliateCode: string;
@@ -47,11 +48,7 @@ export default function AffiliateDashboard() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/affiliates/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const result = await response.json();
+      const result = await api.get<AffiliateData>('/api/affiliates/profile');
       setData(result);
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -69,7 +66,7 @@ export default function AffiliateDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'NGN' }).format(amount || 0);
   };
 
   if (loading) {

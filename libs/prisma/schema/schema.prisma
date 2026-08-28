@@ -25,10 +25,35 @@ model User {
   affiliate Affiliate?
 }
 
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  settings  Json? // branding: logoUrl, primaryColor, tagline, currency
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  seller    Seller?
+  domains   Domain[]
+  configs   PlatformConfig[]
+}
+
+model Domain {
+  id         String   @id @default(uuid())
+  host       String   @unique // normalized: lowercase, no protocol or port
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  isPrimary  Boolean  @default(false)
+  isVerified Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
 model Seller {
   id            String    @id @default(uuid())
   userId        String    @unique
   user          User      @relation(fields: [userId], references: [id])
+  tenantId      String?   @unique
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
   businessName  String?
   payoutEmail   String?
   payoutGateway String?
@@ -112,6 +137,8 @@ enum PayoutStatus {
 
 model PlatformConfig {
   id                   String   @id @default(uuid())
+  tenantId             String?  @unique // null = platform-level config (fallback for tenants)
+  tenant               Tenant?  @relation(fields: [tenantId], references: [id])
   paystackPublicKey    String?
   paystackSecretKey    String?
   paystackActive       Boolean  @default(false)
@@ -139,6 +166,7 @@ model Product {
   subscriptions Subscription[]
   affiliateLinks AffiliateLink[]
   commissions     AffiliateCommission[]
+  honeypots      Honeypot[]
 }
 
 model Transaction {
@@ -162,6 +190,8 @@ model Transaction {
   updatedAt   DateTime  @updatedAt
   license     License?
   affiliateCommission AffiliateCommission?
+  promotionId String?
+  promotion   Promotion? @relation(fields: [promotionId], references: [id])
 }
 
 model Plan {
@@ -192,6 +222,7 @@ model Subscription {
   cancelAtPeriodEnd  Boolean @default(false)
   paymentFailedAt DateTime?
   graceUntil DateTime?
+  lastDunningSentAt DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   licenses       License[]
@@ -236,6 +267,71 @@ model AuditLog {
   createdAt   DateTime @default(now())
 }
 
+// Decoy license keys planted by admins/sellers. Any use of these keys on the
+// public license endpoints is recorded as a HoneypotHit and alerts the seller.
+model Honeypot {
+  id        String        @id @default(uuid())
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+  key       String        @unique
+  label     String? // where the decoy was planted (leaked build, forum, etc.)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  hits      HoneypotHit[]
+
+  @@index([productId])
+}
+
+model HoneypotHit {
+  id         String   @id @default(uuid())
+  honeypotId String
+  honeypot   Honeypot @relation(fields: [honeypotId], references: [id])
+  endpoint   String // verify | ota-check | ota-validate | activate | deactivate | status
+  machineId  String?
+  domain     String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([honeypotId, createdAt])
+}
+
+// Bots that fill the invisible honeypot field on public forms (register,
+// forgot-password). The submission is silently dropped and recorded here.
+model BotSubmission {
+  id        String   @id @default(uuid())
+  form      String // register | register-customer | forgot-password
+  email     String?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Every payment webhook received from a gateway. Kept for auditing and so
+// admins can replay an event after fixing config/data issues.
+model WebhookEvent {
+  id               String   @id @default(uuid())
+  gateway          String // paystack | flutterwave
+  eventName        String
+  reference        String?
+  signature        String? // stored: required to replay authenticated requests
+  rawBody          String? // paystack signs the raw body — needed for replay
+  payload          Json
+  status           String   @default("processing") // processing | processed | duplicate | ignored | failed
+  error            String?
+  configId         String? // which PlatformConfig matched the signature
+  replayCount      Int      @default(0)
+  lastReplayAt     DateTime?
+  lastReplayStatus String?
+  createdAt        DateTime @default(now())
+
+  @@index([gateway, createdAt])
+}
+
 enum Role {
   ADMIN
   SELLER
@@ -247,4 +343,25 @@ enum Interval {
   ONETIME
   MONTHLY
   ANNUAL
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  description String?
+  discountType DiscountType @default(PERCENTAGE)
+  discountValue Float
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+  maxUses     Int?
+  uses        Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  transactions Transaction[]
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
 }

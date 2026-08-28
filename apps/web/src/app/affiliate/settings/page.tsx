@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { User, Link2, Percent, Save, Check, Loader2, Copy, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 
 const container = {
   hidden: { opacity: 0 },
@@ -42,20 +43,10 @@ export default function AffiliateSettings() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token') || '';
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/affiliates/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        const frontendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
-        setReferralLink(`${frontendUrl}/checkout?affiliate=${data.affiliateCode}`);
-      }
+      const data = await api.get<AffiliateProfile>('/api/affiliates/profile');
+      setProfile(data);
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      setReferralLink(`${origin}/checkout?affiliate=${data.affiliateCode}`);
     } catch (err) {
       console.error('Failed to fetch profile:', err);
     } finally {
@@ -216,7 +207,7 @@ export default function AffiliateSettings() {
                       <span className="text-xs text-gray-500">Total Earnings</span>
                     </div>
                     <p className="text-2xl font-bold text-emerald-400">
-                      ${(profile?.totalEarnings || 0).toFixed(2)}
+                      ₦{(profile?.totalEarnings || 0).toFixed(2)}
                     </p>
                   </div>
                   
@@ -225,7 +216,7 @@ export default function AffiliateSettings() {
                       <span className="text-xs text-gray-500">Pending Payout</span>
                     </div>
                     <p className="text-2xl font-bold text-amber-400">
-                      ${(profile?.pendingPayout || 0).toFixed(2)}
+                      ₦{(profile?.pendingPayout || 0).toFixed(2)}
                     </p>
                   </div>
                 </div>

@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaystackService } from '../payments/paystack.service';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { TaxService } from '../tax/tax.service';
 import { InitializePaymentDto } from './dto/initialize-payment.dto';
 import { PrismaService } from '../prisma.service';
+import { TenantService } from '../tenancy/tenant.service';
 
 @Injectable()
 export class CheckoutService {
@@ -11,21 +12,49 @@ export class CheckoutService {
     private readonly paystackService: PaystackService,
     private readonly flutterwaveService: FlutterwaveService,
     private readonly taxService: TaxService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly tenantService: TenantService
   ) {}
+
+  private async resolveConfig() {
+    const tenantId = this.tenantService.scopeTenantId();
+    if (tenantId) {
+      const tenantConfig = await this.prisma.platformConfig.findFirst({ where: { tenantId } });
+      if (tenantConfig) return tenantConfig;
+    }
+    const platformConfig = await this.prisma.platformConfig.findFirst({ where: { tenantId: null } });
+    if (platformConfig) return platformConfig;
+    return this.prisma.platformConfig.findFirst();
+  }
+
+  private async assertTenantScope(product: { id: string; sellerId: string; seller?: { tenantId: string | null } | null }) {
+    const tenantId = this.tenantService.scopeTenantId();
+    if (tenantId === undefined) return; // platform context (or no context) - any product allowed
+    if (tenantId === null) {
+      throw new NotFoundException('Unknown storefront domain');
+    }
+    const seller = product.seller
+      ? product.seller
+      : await this.prisma.seller.findUnique({ where: { id: product.sellerId }, select: { tenantId: true } });
+    if (!seller || seller.tenantId !== tenantId) {
+      throw new NotFoundException('Product not available on this storefront');
+    }
+  }
 
   async initializePayment(dto: InitializePaymentDto) {
     const { email, productId, planId, gateway, currency, reference, countryCode, refCode } = dto;
-    const config = await this.prisma.platformConfig.findFirst();
+    const config = await this.resolveConfig();
 
     const plan = await this.prisma.plan.findUnique({
       where: { id: planId },
-      include: { product: true }
+      include: { product: { include: { seller: true } } }
     });
 
     if (!plan || plan.productId !== productId) {
       throw new BadRequestException('Invalid product or plan configuration. Please refresh.');
     }
+
+    await this.assertTenantScope(plan.product);
 
     let subtotal = plan.price;
     let taxAmount = 0;
@@ -63,7 +92,7 @@ export class CheckoutService {
         taxName,
         taxCountry,
         total: Math.round(total * 100) / 100,
-        currency: currency || 'USD',
+        currency: currency || 'NGN',
       }
     };
   }
@@ -79,10 +108,11 @@ export class CheckoutService {
   }
 
   async getPublicConfig() {
-    const config = await this.prisma.platformConfig.findFirst();
+    const config = await this.resolveConfig();
     return {
       paystackActive: !!config?.paystackActive,
       flutterwaveActive: !!config?.flutterwaveActive,
+      platformName: 'SAABIZ',
     };
   }
 }

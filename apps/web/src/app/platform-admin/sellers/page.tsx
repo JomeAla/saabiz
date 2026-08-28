@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Mail, Package, DollarSign, MoreVertical } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
+import { api } from '@/lib/api';
 
 interface Seller {
   id: string;
@@ -39,16 +40,7 @@ export default function AdminSellers() {
 
   const fetchSellers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/sellers', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        console.error('Failed to fetch sellers:', response.status);
-        setLoading(false);
-        return;
-      }
-      const data = await response.json();
+      const data = await api.get<Seller[]>('/api/admin/sellers');
       setSellers(data);
     } catch (error) {
       console.error('Failed to fetch sellers:', error);
@@ -58,7 +50,7 @@ export default function AdminSellers() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'NGN' }).format(amount || 0);
   };
 
   const columns = [

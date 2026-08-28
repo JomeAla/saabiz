@@ -11,5 +11,6 @@ import { AffiliatesModule } from '../affiliates/affiliates.module';
   imports: [PaymentsModule, NotificationsModule, EventsModule, AffiliatesModule],
   controllers: [WebhooksController],
   providers: [WebhooksService, PrismaService],
+  exports: [WebhooksService],
 })
 export class WebhooksModule {}

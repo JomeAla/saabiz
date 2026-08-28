@@ -1,40 +1,37 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request, Param } from '@nestjs/common';
-import { SubscriptionsService } from '../subscriptions/subscriptions.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { TenantService } from '../tenancy/tenant.service';
+import { CheckoutService } from './checkout.service';
 
 @Controller('checkout')
-export class CheckoutController {
+export class CheckoutEmbedController {
   constructor(
-    private subscriptionsService: SubscriptionsService,
     private prisma: PrismaService,
+    private tenantService: TenantService,
+    private checkoutService: CheckoutService,
   ) {}
-
-  @Get('config')
-  async getCheckoutConfig() {
-    const config = await this.prisma.platformConfig.findFirst();
-    return {
-      paystackActive: config?.paystackActive || false,
-      flutterwaveActive: config?.flutterwaveActive || false,
-      platformName: 'SAABIZ',
-    };
-  }
 
   @Get('embed/:productId/:planId')
   async getEmbedCheckout(
     @Param('productId') productId: string,
     @Param('planId') planId: string,
   ) {
+    const tenantId = this.tenantService.scopeTenantId();
+    if (tenantId === null) {
+      throw new NotFoundException('Unknown storefront domain');
+    }
+
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      include: { seller: true, plans: true },
+      include: { seller: { include: { tenant: true } }, plans: true },
     });
 
     if (!product || product.isFrozen) {
       return { error: 'Product not available' };
+    }
+
+    if (tenantId !== undefined && product.seller.tenantId !== tenantId) {
+      return { error: 'Product not available on this storefront' };
     }
 
     const plan = product.plans.find(p => p.id === planId);
@@ -60,31 +57,41 @@ export class CheckoutController {
   }
 
   @Post('initialize-embed')
-  async initializeEmbedCheckout(@Body() body: { 
-    productId: string; 
-    planId: string; 
+  async initializeEmbedCheckout(@Body() body: {
+    productId: string;
+    planId: string;
     email: string;
     gateway: string;
   }) {
     const { productId, planId, email, gateway } = body;
 
+    const tenantId = this.tenantService.scopeTenantId();
+    if (tenantId === null) {
+      throw new NotFoundException('Unknown storefront domain');
+    }
+
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
+      include: { seller: true },
     });
 
     if (!product || product.isFrozen) {
-      throw new Error('Product not available');
+      throw new NotFoundException('Product not available');
+    }
+
+    if (tenantId !== undefined && product.seller.tenantId !== tenantId) {
+      throw new NotFoundException('Product not available on this storefront');
     }
 
     const plan = await this.prisma.plan.findUnique({
       where: { id: planId },
     });
 
-    if (!plan) {
-      throw new Error('Plan not found');
+    if (!plan || plan.productId !== productId) {
+      throw new NotFoundException('Plan not found');
     }
 
-    let checkoutUrl = `http://localhost:3000/checkout?productId=${productId}&planId=${planId}&email=${email}`;
+    let checkoutUrl = `${this.tenantService.frontendUrl()}/checkout?productId=${productId}&planId=${planId}&email=${encodeURIComponent(email)}`;
     if (gateway) {
       checkoutUrl += `&gateway=${gateway}`;
     }
@@ -98,7 +105,9 @@ export class CheckoutController {
   }
 
   private generateEmbedCode(productId: string, planId: string): string {
+    const scheme = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const webUrl = this.tenantService.frontendUrl();
     return `<div id="saabiz-checkout-widget" data-product="${productId}" data-plan="${planId}"></div>
-<script src="https://localhost:3000/js/checkout-widget.js"></script>`;
+<script src="${webUrl}/js/checkout-widget.js" data-api-url="${scheme}://${this.tenantService.current()?.host || 'localhost:3001'}"></script>`;
   }
 }

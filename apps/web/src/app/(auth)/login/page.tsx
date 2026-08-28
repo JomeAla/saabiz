@@ -2,10 +2,11 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 import { 
   Mail, 
   Lock, 
@@ -42,9 +43,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     setMounted(true);
-  });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,19 +53,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Authentication failed. Please check your credentials.');
-        setLoading(false);
-        return;
-      }
+      const data = await api.post<{ access_token: string; user: { role: string } }>('/api/auth/login', { email, password });
 
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -73,11 +62,13 @@ export default function LoginPage() {
         router.push('/platform-admin/dashboard');
       } else if (data.user.role === 'SELLER') {
         router.push('/seller/dashboard');
+      } else if (data.user.role === 'AFFILIATE') {
+        router.push('/affiliate/dashboard');
       } else {
         router.push('/customer/dashboard');
       }
-    } catch (err) {
-      setError('Unable to connect to the server. Please try again later.');
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed. Please check your credentials.');
       setLoading(false);
     }
   };
@@ -131,7 +122,7 @@ export default function LoginPage() {
               >
                 <Box className="w-7 h-7 text-white" strokeWidth={2} />
               </div>
-              <span className="text-2xl font-semibold text-white tracking-tight">Saarbiz</span>
+              <span className="text-2xl font-semibold text-white tracking-tight">Saabiz</span>
             </motion.div>
 
             {/* Headline */}
@@ -184,7 +175,7 @@ export default function LoginPage() {
               className="flex gap-12 mt-16"
             >
               {[
-                { value: '$10M+', label: 'Processed' },
+                { value: '₦10M+', label: 'Processed' },
                 { value: '99.9%', label: 'Uptime' },
                 { value: '50+', label: 'Countries' },
               ].map((stat, index) => (
@@ -216,7 +207,7 @@ export default function LoginPage() {
             >
               <Box className="w-6 h-6 text-white" strokeWidth={2} />
             </div>
-            <span className="text-xl font-semibold text-white">Saarbiz</span>
+            <span className="text-xl font-semibold text-white">Saabiz</span>
           </div>
 
           {/* Card */}
@@ -375,7 +366,7 @@ export default function LoginPage() {
               transition={{ duration: 0.4, delay: 0.7 }}
               className="text-center mt-8 text-gray-400"
             >
-              New to Saarbiz?{' '}
+              New to Saabiz?{' '}
               <Link 
                 href="/register" 
                 className="font-medium transition-colors hover:text-emerald-400"

@@ -24,7 +24,7 @@ async function main() {
   }
 
   console.log('\nChecking for updates...');
-  const updateResult = await saabiz.checkForUpdate(productId, '1.0.0');
+  const updateResult = await saabiz.checkForUpdate(licenseKey, productId, '1.0.0');
 
   if (updateResult.hasUpdate) {
     console.log('⚠ Update available:', updateResult.latestVersion);
@@ -32,6 +32,12 @@ async function main() {
   } else {
     console.log('✓ You are running the latest version');
   }
+
+  console.log('\nActivating license on this machine...');
+  const activationResult = await saabiz.activate(licenseKey, productId);
+  console.log(`  Success: ${activationResult.success}`);
+  console.log(`  Machine: ${activationResult.machineId}`);
+  console.log(`  Activation count: ${activationResult.activations} / ${activationResult.maxActivations}`);
 }
 
 main().catch(console.error);

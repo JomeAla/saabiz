@@ -1,22 +1,24 @@
 import { test, expect } from '@playwright/test';
 
+test.setTimeout(120_000);
+
 test.describe('Authentication', () => {
   test('should display login page', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
-    await expect(page.getByPlaceholder(/email/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
+    await expect(page.getByPlaceholder('you@company.com')).toBeVisible();
     await expect(page.getByPlaceholder(/password/i)).toBeVisible();
   });
 
   test('should display register page', async ({ page }) => {
     await page.goto('/register');
-    await expect(page.getByRole('heading', { name: /create account/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /create your account/i })).toBeVisible();
   });
 
   test('should login successfully with valid credentials', async ({ page }) => {
     await page.goto('/login');
     
-    await page.getByPlaceholder(/email/i).fill('seller@saarbiz.com');
+    await page.getByPlaceholder('you@company.com').fill('seller@saabiz.com');
     await page.getByPlaceholder(/password/i).fill('seller123');
     
     await page.getByRole('button', { name: /sign in/i }).click();
@@ -28,7 +30,7 @@ test.describe('Authentication', () => {
   test('should show error with invalid credentials', async ({ page }) => {
     await page.goto('/login');
     
-    await page.getByPlaceholder(/email/i).fill('invalid@example.com');
+    await page.getByPlaceholder('you@company.com').fill('invalid@example.com');
     await page.getByPlaceholder(/password/i).fill('wrongpassword');
     
     await page.getByRole('button', { name: /sign in/i }).click();
@@ -38,12 +40,12 @@ test.describe('Authentication', () => {
 
   test('should logout successfully', async ({ page }) => {
     await page.goto('/login');
-    await page.getByPlaceholder(/email/i).fill('seller@saarbiz.com');
+    await page.getByPlaceholder('you@company.com').fill('seller@saabiz.com');
     await page.getByPlaceholder(/password/i).fill('seller123');
     await page.getByRole('button', { name: /sign in/i }).click();
     await page.waitForURL('/seller/dashboard');
     
-    await page.getByRole('button', { name: /logout/i }).click();
+    await page.getByRole('button', { name: /sign out/i }).click();
     
     await page.waitForURL('/');
   });
@@ -52,7 +54,7 @@ test.describe('Authentication', () => {
 test.describe('Marketplace', () => {
   test('should display marketplace', async ({ page }) => {
     await page.goto('/marketplace');
-    await expect(page.getByRole('heading', { name: /marketplace/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /discover premium software/i })).toBeVisible();
   });
 
   test('should show products', async ({ page }) => {
@@ -64,7 +66,7 @@ test.describe('Marketplace', () => {
 test.describe('Seller Portal', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.getByPlaceholder(/email/i).fill('seller@saarbiz.com');
+    await page.getByPlaceholder('you@company.com').fill('seller@saabiz.com');
     await page.getByPlaceholder(/password/i).fill('seller123');
     await page.getByRole('button', { name: /sign in/i }).click();
     await page.waitForURL('/seller/dashboard');
@@ -82,7 +84,7 @@ test.describe('Seller Portal', () => {
 
   test('should display subscribers page', async ({ page }) => {
     await page.goto('/seller/subscribers');
-    await expect(page.getByRole('heading', { name: /subscribers/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Subscribers', exact: true })).toBeVisible();
   });
 
   test('should display settings page', async ({ page }) => {
@@ -99,7 +101,7 @@ test.describe('Seller Portal', () => {
 test.describe('Customer Portal', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.getByPlaceholder(/email/i).fill('customer@saarbiz.com');
+    await page.getByPlaceholder('you@company.com').fill('customer@saabiz.com');
     await page.getByPlaceholder(/password/i).fill('customer123');
     await page.getByRole('button', { name: /sign in/i }).click();
     await page.waitForURL('/customer/dashboard');
@@ -112,12 +114,12 @@ test.describe('Customer Portal', () => {
 
   test('should display licenses page', async ({ page }) => {
     await page.goto('/customer/licenses');
-    await expect(page.getByRole('heading', { name: /licenses/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My Licenses', exact: true })).toBeVisible();
   });
 
   test('should display billing page', async ({ page }) => {
     await page.goto('/customer/billing');
-    await expect(page.getByRole('heading', { name: /billing/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Billing', exact: true })).toBeVisible();
   });
 
   test('should display settings page', async ({ page }) => {
@@ -129,7 +131,7 @@ test.describe('Customer Portal', () => {
 test.describe('Affiliate Portal', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.getByPlaceholder(/email/i).fill('affiliate@saabiz.com');
+    await page.getByPlaceholder('you@company.com').fill('affiliate@saabiz.com');
     await page.getByPlaceholder(/password/i).fill('affiliate123');
     await page.getByRole('button', { name: /sign in/i }).click();
     await page.waitForURL('/affiliate/dashboard');
@@ -142,12 +144,12 @@ test.describe('Affiliate Portal', () => {
 
   test('should display links page', async ({ page }) => {
     await page.goto('/affiliate/links');
-    await expect(page.getByRole('heading', { name: /links/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My Affiliate Links', exact: true })).toBeVisible();
   });
 
   test('should display commissions page', async ({ page }) => {
     await page.goto('/affiliate/commissions');
-    await expect(page.getByRole('heading', { name: /commissions/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Commissions', exact: true })).toBeVisible();
   });
 
   test('should display settings page', async ({ page }) => {

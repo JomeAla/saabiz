@@ -221,6 +221,8 @@ class SaabizLicense {
                 'message' => $response['message'] ?? 'License activated successfully',
                 'activations' => $response['activations'] ?? 1,
                 'maxActivations' => $response['maxActivations'] ?? 1,
+                'isActivated' => $response['isActivated'] ?? true,
+                'machineId' => $response['machineId'] ?? $this->machineId,
                 'expiresAt' => $response['expiresAt'] ?? null,
             ];
         }

@@ -357,7 +357,7 @@ export default function ProductManager() {
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Price (USD)</label>
+                              <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Price (₦)</label>
                               <input 
                                 type="number" 
                                 step="0.01" 
@@ -417,7 +417,7 @@ export default function ProductManager() {
                               <div className="text-[10px] font-mono text-gray-600 mt-0.5">{plan.id.substring(0, 12)}...</div>
                             </div>
                             <div className="font-bold text-white bg-white/5 px-3 py-1.5 rounded-lg group-hover:bg-emerald-500/10 group-hover:text-emerald-400 transition-colors">
-                              ${plan.price.toFixed(2)}
+                              ₦{plan.price.toFixed(2)}
                             </div>
                           </div>
                         ))}

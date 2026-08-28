@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DollarSign, TrendingUp, Package, Users, CreditCard, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Package, Users, CreditCard, Loader2, ArrowUpRight, ArrowDownRight, Globe, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { api } from '@/lib/api';
 
 interface DashboardData {
   sellerId: string;
@@ -15,6 +17,12 @@ interface DashboardData {
   successfulTransactions: number;
   activeSubscriptions: number;
   recentTransactions: any[];
+  tenant: {
+    id: string;
+    slug: string;
+    name: string;
+    storefrontUrl: string;
+  } | null;
 }
 
 const containerVariants = {
@@ -54,16 +62,7 @@ export default function SellerDashboardPage() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/seller/dashboard', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to load dashboard');
-      }
-      
-      const result = await response.json();
+      const result = await api.get<DashboardData>('/api/seller/dashboard');
       setData(result);
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard');
@@ -73,7 +72,7 @@ export default function SellerDashboardPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'NGN' }).format(amount || 0);
   };
 
   if (loading) {
@@ -198,6 +197,30 @@ export default function SellerDashboardPage() {
           </motion.div>
         ))}
       </motion.div>
+
+      {data?.tenant && (
+        <motion.div variants={itemVariants} className="glass-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <Globe className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-0.5">Your storefront</p>
+            <p className="text-white font-semibold truncate">
+              {data.tenant.name}
+              <span className="text-gray-500 font-normal"> · {data.tenant.slug}.saabiz.com</span>
+            </p>
+          </div>
+          <Link
+            href={`http://${data.tenant.storefrontUrl}:3000`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all shrink-0"
+          >
+            Visit storefront
+            <ExternalLink className="w-4 h-4" />
+          </Link>
+        </motion.div>
+      )}
 
       <motion.div variants={itemVariants} className="glass-card rounded-2xl overflow-hidden">
         <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">

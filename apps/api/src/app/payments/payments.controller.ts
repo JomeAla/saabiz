@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { UpdatePaymentConfigDto } from './dto/payment-config.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,12 +13,12 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Get('config')
-  async getConfig() {
-    return this.paymentsService.getPaymentConfig();
+  async getConfig(@Query('tenantId') tenantId?: string) {
+    return this.paymentsService.getPaymentConfig(tenantId || null);
   }
 
   @Post('config')
-  async updateConfig(@Body() dto: UpdatePaymentConfigDto) {
-    return this.paymentsService.updatePaymentConfig(dto);
+  async updateConfig(@Body() dto: UpdatePaymentConfigDto, @Query('tenantId') tenantId?: string) {
+    return this.paymentsService.updatePaymentConfig(dto, tenantId || null);
   }
 }

@@ -318,6 +318,93 @@ export class NotificationsService {
     });
   }
 
+  async sendPaymentFailedEmail(
+    email: string,
+    productName: string,
+    amount: number,
+    graceUntil: Date,
+    attempt?: number,
+  ): Promise<any> {
+    return this.sendEmail({
+      to: email,
+      subject: `Payment Failed - ${productName}`,
+      html: `
+        <h2>We couldn't process your payment</h2>
+        <p>Your recurring payment for <strong>${productName}</strong> could not be processed${attempt ? ` (attempt ${attempt})` : ''}.</p>
+        <div class="highlight">
+          <strong>Amount Due:</strong> $${amount.toFixed(2)}<br>
+          <strong>Access Until:</strong> ${graceUntil.toLocaleDateString()}<br>
+          <strong>Status:</strong> Grace period
+        </div>
+        <p>Your access continues until <strong>${graceUntil.toLocaleDateString()}</strong>, but you'll need to update your payment method to keep your license active.</p>
+        <p style="text-align: center;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/customer/billing" class="button">Update Payment Method</a>
+        </p>
+        <p>If you don't update your payment method, your license will be deactivated after the grace period.</p>
+      `,
+    });
+  }
+
+  async sendDunningReminderEmail(
+    email: string,
+    productName: string,
+    amount: number,
+    graceUntil: Date,
+    isFinalWarning: boolean,
+  ): Promise<any> {
+    return this.sendEmail({
+      to: email,
+      subject: `${isFinalWarning ? 'FINAL WARNING' : 'Reminder'}: Payment overdue - ${productName}`,
+      html: `
+        <h2>${isFinalWarning ? 'Final Warning: Your license will be deactivated' : 'Friendly Reminder'}</h2>
+        <p>${isFinalWarning
+          ? `Your outstanding payment for <strong>${productName}</strong> is overdue. If we don't receive payment by <strong>${graceUntil.toLocaleDateString()}</strong>, your license will be deactivated permanently.`
+          : `We noticed your payment for <strong>${productName}</strong> hasn't gone through yet. Your access is still active until <strong>${graceUntil.toLocaleDateString()}</strong>.`}</p>
+        <div class="highlight">
+          <strong>Amount Due:</strong> $${amount.toFixed(2)}<br>
+          <strong>Access Until:</strong> ${graceUntil.toLocaleDateString()}
+        </div>
+        <p style="text-align: center;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/customer/billing" class="button">Pay Now</a>
+        </p>
+      `,
+    });
+  }
+
+  async sendHoneypotAlert(
+    to: string,
+    data: {
+      licenseKey: string;
+      productName: string;
+      endpoint: string;
+      machineId?: string;
+      domain?: string;
+      ipAddress?: string;
+    },
+  ): Promise<any> {
+    const detailRow = (label: string, value: string) =>
+      `<tr><td style="padding: 8px 0; color: #6b7280; width: 140px;">${label}</td><td style="padding: 8px 0; font-family: monospace; color: #1f2937;">${value}</td></tr>`;
+
+    return this.sendEmail({
+      to,
+      subject: `ALERT: Honeypot license key hit - ${data.productName}`,
+      html: `
+        <h2 style="color: #dc2626;">Honeypot License Key Used</h2>
+        <p>A decoy license key was just used against a public license endpoint. Someone is likely using a leaked or pirated copy of <strong>${data.productName}</strong>.</p>
+        <div class="highlight" style="background: #fef2f2; border-left: 4px solid #dc2626;">
+          <table style="width: 100%; border-collapse: collapse;">
+            ${detailRow('License Key', data.licenseKey)}
+            ${detailRow('Endpoint', data.endpoint)}
+            ${detailRow('Machine ID', data.machineId || 'not provided')}
+            ${detailRow('Domain', data.domain || 'not provided')}
+            ${detailRow('IP Address', data.ipAddress || 'unknown')}
+          </table>
+        </div>
+        <p>No real access was granted. Review the hit in the admin panel under <strong>Platform Admin &gt; Honeypots</strong>.</p>
+      `,
+    });
+  }
+
   async sendAffiliateCommissionNotification(email: string, amount: number, productName: string, commissionId: string): Promise<any> {
     return this.sendEmail({
       to: email,

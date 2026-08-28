@@ -9,9 +9,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://saabiz.com'),
   title: {
-    default: 'Saarbiz — Merchant of Record Platform',
-    template: '%s | Saarbiz',
+    default: 'Saabiz — Merchant of Record Platform',
+    template: '%s | Saabiz',
   },
   description: 'Sell your software globally with integrated payments, subscriptions, and licensing. The modern MoR platform built for SaaS companies.',
   keywords: [
@@ -23,9 +24,9 @@ export const metadata: Metadata = {
     'fraud protection',
     'tax compliance',
   ],
-  authors: [{ name: 'Saarbiz' }],
-  creator: 'Saarbiz',
-  publisher: 'Saarbiz',
+  authors: [{ name: 'Saabiz' }],
+  creator: 'Saabiz',
+  publisher: 'Saabiz',
   robots: {
     index: true,
     follow: true,
@@ -40,25 +41,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://saarbiz.com',
-    siteName: 'Saarbiz',
-    title: 'Saarbiz — Merchant of Record Platform',
+    url: 'https://saabiz.com',
+    siteName: 'Saabiz',
+    title: 'Saabiz — Merchant of Record Platform',
     description: 'Sell your software globally with integrated payments, subscriptions, and licensing.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Saarbiz - Merchant of Record Platform',
+        alt: 'Saabiz - Merchant of Record Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Saarbiz — Merchant of Record Platform',
+    title: 'Saabiz — Merchant of Record Platform',
     description: 'Sell your software globally with integrated payments, subscriptions, and licensing.',
     images: ['/og-image.png'],
-    creator: '@saarbiz',
+    creator: '@saabiz',
   },
   icons: {
     icon: [
@@ -90,6 +91,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script dangerouslySetInnerHTML={{ __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }); }` }} />
       </head>
       <body className="min-h-screen antialiased" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
         {children}

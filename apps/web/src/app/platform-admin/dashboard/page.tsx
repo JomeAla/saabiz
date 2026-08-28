@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, Users, Package, CreditCard, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
-
-const API_URL = 'http://localhost:3001';
+import { api } from '@/lib/api';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -48,19 +47,11 @@ export default function AdminDashboard() {
         setLoading(false);
         return;
       }
-      const response = await fetch(`${API_URL}/api/admin/dashboard`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        setError(`Failed to load dashboard (${response.status})`);
-        setLoading(false);
-        return;
-      }
-      const data = await response.json();
+      const data = await api.get<DashboardStats>('/api/admin/dashboard');
       setStats(data);
       setLoading(false);
-    } catch (err) {
-      setError('Failed to connect to API server. Make sure the API is running on port 3001.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to connect to API server.');
       setLoading(false);
     }
   }, []);
@@ -70,7 +61,7 @@ export default function AdminDashboard() {
   }, [fetchStats]);
 
   const formatCurrency = (amount?: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount ?? 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'NGN' }).format(amount ?? 0);
   };
 
   if (loading) {

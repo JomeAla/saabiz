@@ -1,11 +1,16 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { Request } from 'express';
 import { PrismaService } from '../prisma.service';
+import { HoneypotsService } from '../honeypots/honeypots.service';
 
 @ApiTags('licenses')
 @Controller('licenses')
 export class Otacontroller {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private honeypots: HoneypotsService,
+  ) {}
 
   @Post('ota-check')
   @ApiOperation({ summary: 'Check for software updates' })
@@ -21,12 +26,45 @@ export class Otacontroller {
     },
   })
   @ApiResponse({ status: 200, description: 'Update check result' })
-  async checkForUpdates(@Body() body: { 
-    licenseKey: string; 
-    productId: string; 
-    currentVersion?: string;
-  }) {
+  async checkForUpdates(
+    @Req() req: Request,
+    @Body() body: {
+      licenseKey: string;
+      productId: string;
+      currentVersion?: string;
+    },
+  ) {
     const { licenseKey, productId, currentVersion } = body;
+
+    if (!licenseKey || !productId) {
+      return { valid: false, error: 'licenseKey and productId are required', updateAvailable: false };
+    }
+
+    const isDecoy = await this.honeypots.isDecoy(licenseKey, productId, {
+      endpoint: 'ota-check',
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+      metadata: { currentVersion },
+    });
+    if (isDecoy) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
+        select: { id: true, name: true, version: true },
+      });
+      return {
+        valid: true,
+        license: { key: licenseKey.toUpperCase().trim(), active: true, expiresAt: null },
+        product: {
+          id: product?.id || productId,
+          name: product?.name || 'Software Product',
+          version: product?.version || '1.0.0',
+          downloadUrl: null,
+        },
+        updateAvailable: false,
+        latestVersion: product?.version || '1.0.0',
+        currentVersion: currentVersion || 'unknown',
+      };
+    }
 
     const license = await this.prisma.license.findFirst({
       where: { 
@@ -98,13 +136,44 @@ export class Otacontroller {
     },
   })
   @ApiResponse({ status: 200, description: 'Validation result' })
-  async otaValidate(@Body() body: {
-    licenseKey: string;
-    productId: string;
-    machineId?: string;
-    domain?: string;
-  }) {
+  async otaValidate(
+    @Req() req: Request,
+    @Body() body: {
+      licenseKey: string;
+      productId: string;
+      machineId?: string;
+      domain?: string;
+    },
+  ) {
     const { licenseKey, productId, machineId, domain } = body;
+
+    if (!licenseKey || !productId) {
+      return { valid: false, error: 'licenseKey and productId are required' };
+    }
+
+    const isDecoy = await this.honeypots.isDecoy(licenseKey, productId, {
+      endpoint: 'ota-validate',
+      machineId,
+      domain,
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+    if (isDecoy) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
+        select: { name: true },
+      });
+      return {
+        valid: true,
+        productName: product?.name || 'Software Product',
+        expiresAt: null,
+        metadata: {
+          validatedAt: new Date().toISOString(),
+          machineId: machineId || 'not provided',
+          domain: domain || 'not provided',
+        },
+      };
+    }
 
     const license = await this.prisma.license.findFirst({
       where: { 

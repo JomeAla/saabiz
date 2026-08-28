@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { Key, X, ArrowUpCircle, Check, AlertCircle, Download, Copy, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface License {
   id: string;
@@ -52,19 +53,14 @@ export default function CustomerLicenses() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/subscriptions/my-subscriptions', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
+      const data = await api.get<any>('/api/subscriptions/my-subscriptions');
       setLicenses(data.licenses || []);
-      
+
       const productIds = [...new Set((data.licenses || []).map((l: License) => l.product.id))] as string[];
       const plansData: Record<string, Plan[]> = {};
       for (const productId of productIds) {
-        const plansResponse = await fetch(`/api/subscriptions/plans/${productId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        plansData[productId] = await plansResponse.json() as Plan[];
+        const plans = await api.get<Plan[]>(`/api/subscriptions/plans/${productId}`);
+        plansData[productId] = plans;
       }
       setAvailablePlans(plansData);
     } catch (error) {
@@ -76,28 +72,14 @@ export default function CustomerLicenses() {
 
   const handleCancel = async (subscriptionId: string) => {
     if (!confirm('Are you sure you want to cancel this subscription?')) return;
-    
+
     setCanceling(subscriptionId);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/subscriptions/cancel', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ subscriptionId }),
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: data.message });
-        fetchData();
-      } else {
-        setMessage({ type: 'error', text: data.message });
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to cancel subscription' });
+      const data = await api.post<any>('/api/subscriptions/cancel', { subscriptionId });
+      setMessage({ type: 'success', text: data.message });
+      fetchData();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setCanceling(null);
     }
@@ -106,26 +88,12 @@ export default function CustomerLicenses() {
   const handleUpgrade = async (subscriptionId: string, newPlanId: string) => {
     setUpgrading(subscriptionId);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/subscriptions/upgrade', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ subscriptionId, newPlanId }),
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Subscription upgraded successfully!' });
-        setOpenUpgrade(null);
-        fetchData();
-      } else {
-        setMessage({ type: 'error', text: data.message });
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to upgrade subscription' });
+      await api.post('/api/subscriptions/upgrade', { subscriptionId, newPlanId });
+      setMessage({ type: 'success', text: 'Subscription upgraded successfully!' });
+      setOpenUpgrade(null);
+      fetchData();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setUpgrading(null);
     }
@@ -134,11 +102,11 @@ export default function CustomerLicenses() {
   const handleDownload = async (licenseId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/licenses/download/${licenseId}`, {
+      const response = await fetch(`/api/licenses/download/${licenseId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      
+
       if (data.downloadUrl) {
         window.open(data.downloadUrl, '_blank');
       } else {
@@ -241,7 +209,7 @@ export default function CustomerLicenses() {
                           <div>
                             <h3 className="text-xl font-semibold text-white">{license.product.name}</h3>
                             <p className="text-sm text-gray-500 mt-1">
-                              {license.transaction?.plan?.name} — ${license.transaction?.plan?.price}/{license.transaction?.plan?.interval?.toLowerCase()}
+                              {license.transaction?.plan?.name} — ₦{license.transaction?.plan?.price}/{license.transaction?.plan?.interval?.toLowerCase()}
                             </p>
                           </div>
                           <span className={`px-4 py-1.5 text-sm font-medium rounded-full ${
@@ -315,7 +283,7 @@ export default function CustomerLicenses() {
                                           className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
                                         >
                                           <div className="text-sm font-medium text-white">{plan.name}</div>
-                                          <div className="text-xs text-gray-500">${plan.price}/{plan.interval.toLowerCase()}</div>
+                                          <div className="text-xs text-gray-500">₦{plan.price}/{plan.interval.toLowerCase()}</div>
                                         </button>
                                       ))}
                                     </div>

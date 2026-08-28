@@ -6,6 +6,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 import { 
   Mail, 
   Lock, 
@@ -27,6 +28,7 @@ export default function RegisterPage() {
     confirmPassword: '',
     accountType: 'seller' as 'seller' | 'customer',
     agreeTerms: false,
+    website: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,31 +55,20 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const endpoint = formData.accountType === 'seller' 
-        ? 'http://localhost:3001/api/auth/register'
-        : 'http://localhost:3001/api/auth/register-customer';
+      const endpoint = formData.accountType === 'seller'
+        ? '/api/auth/register'
+        : '/api/auth/register-customer';
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
+      await api.post(endpoint, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        website: formData.website,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Registration failed. Please try again.');
-        setLoading(false);
-        return;
-      }
-
       router.push('/(auth)/login?registered=true');
-    } catch (err) {
-      setError('Unable to connect to the server. Please try again later.');
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
       setLoading(false);
     }
   };
@@ -131,7 +122,7 @@ export default function RegisterPage() {
               >
                 <Box className="w-7 h-7 text-white" strokeWidth={2} />
               </div>
-              <span className="text-2xl font-semibold text-white tracking-tight">Saarbiz</span>
+              <span className="text-2xl font-semibold text-white tracking-tight">Saabiz</span>
             </motion.div>
 
             {/* Headline */}
@@ -151,7 +142,7 @@ export default function RegisterPage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="body-lg text-gray-400 mb-12 max-w-md"
             >
-              Join thousands of software companies using Saarbiz to accept payments worldwide with zero hassle.
+              Join thousands of software companies using Saabiz to accept payments worldwide with zero hassle.
             </motion.p>
 
             {/* Benefits */}
@@ -205,7 +196,7 @@ export default function RegisterPage() {
             >
               <Box className="w-6 h-6 text-white" strokeWidth={2} />
             </div>
-            <span className="text-xl font-semibold text-white">Saarbiz</span>
+            <span className="text-xl font-semibold text-white">Saabiz</span>
           </div>
 
           {/* Card */}
@@ -280,6 +271,20 @@ export default function RegisterPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Honeypot field - hidden from humans, bots fill it */}
+              <div aria-hidden="true" className="hidden">
+                <label htmlFor="website">Website</label>
+                <input
+                  id="website"
+                  type="text"
+                  name="website"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               {/* Name */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}

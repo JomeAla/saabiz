@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, Loader2, ArrowRight, Search, Star, ShoppingCart, Eye, Grid3X3 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface Plan {
   id: string;
@@ -49,8 +50,7 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/products/public')
-      .then(res => res.json())
+    api.get<Product[]>('/api/products/public')
       .then(data => {
         setProducts(Array.isArray(data) ? data : []);
       })
@@ -225,7 +225,7 @@ export default function MarketplacePage() {
                           <div className="pt-4 border-t border-white/[0.06]">
                             <p className="text-xs text-slate-500 mb-1">Starting at</p>
                             <div className="flex items-baseline gap-1">
-                              <span className="text-3xl font-bold text-white">${lowestPrice?.price.toFixed(2)}</span>
+                              <span className="text-3xl font-bold text-white">₦{lowestPrice?.price.toFixed(2)}</span>
                               <span className="text-slate-500">/{lowestPrice?.interval.toLowerCase()}</span>
                             </div>
                           </div>

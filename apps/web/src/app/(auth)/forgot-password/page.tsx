@@ -6,9 +6,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, Loader2, ArrowLeft, Check, MailOpen } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -19,17 +21,8 @@ export default function ForgotPasswordPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (response.ok) {
-        setSent(true);
-      } else {
-        setError('Failed to send reset email');
-      }
+      await api.post('/api/auth/forgot-password', { email, website });
+      setSent(true);
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {
@@ -97,6 +90,20 @@ export default function ForgotPasswordPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Honeypot field - hidden from humans, bots fill it */}
+          <div aria-hidden="true" className="hidden">
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              type="text"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           {error && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}

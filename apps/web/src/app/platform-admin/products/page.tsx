@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, AlertTriangle, PauseCircle, PlayCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
+import { api } from '@/lib/api';
 
 interface Product {
   id: string;
@@ -41,16 +42,7 @@ export default function AdminProducts() {
 
   const fetchProducts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/products', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        console.error('Failed to fetch products:', response.status);
-        setLoading(false);
-        return;
-      }
-      const data = await response.json();
+      const data = await api.get<Product[]>('/api/admin/products');
       setProducts(data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -65,22 +57,9 @@ export default function AdminProducts() {
 
     setProcessing(productId);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/products/freeze', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ productId, freeze, reason }),
-      });
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: `Product ${freeze ? 'frozen' : 'unfrozen'} successfully` });
-        fetchProducts();
-      } else {
-        setMessage({ type: 'error', text: 'Failed to update product' });
-      }
+      await api.post('/api/admin/products/freeze', { productId, freeze, reason });
+      setMessage({ type: 'success', text: `Product ${freeze ? 'frozen' : 'unfrozen'} successfully` });
+      fetchProducts();
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update product' });
     } finally {
@@ -89,7 +68,7 @@ export default function AdminProducts() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'NGN' }).format(amount || 0);
   };
 
   const columns = [

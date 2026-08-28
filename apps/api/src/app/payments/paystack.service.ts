@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { TenantService } from '../tenancy/tenant.service';
 import axios from 'axios';
 
 @Injectable()
@@ -7,15 +8,27 @@ export class PaystackService {
   private readonly logger = new Logger(PaystackService.name);
   private readonly baseUrl = 'https://api.paystack.co';
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tenantService: TenantService
+  ) {}
 
   private async getHeaders() {
-    const config = await this.prisma.platformConfig.findFirst();
-
+    const tenantId = this.tenantService.scopeTenantId();
+    if (tenantId) {
+      const tenantConfig = await this.prisma.platformConfig.findFirst({ where: { tenantId } });
+      if (tenantConfig?.paystackSecretKey) {
+        return {
+          Authorization: `Bearer ${tenantConfig.paystackSecretKey}`,
+          'Content-Type': 'application/json',
+        };
+      }
+    }
+    const platformConfig = await this.prisma.platformConfig.findFirst({ where: { tenantId: null } });
+    const config = platformConfig ?? (await this.prisma.platformConfig.findFirst());
     if (!config?.paystackSecretKey) {
       throw new Error('Paystack secret key not configured');
     }
-
     return {
       Authorization: `Bearer ${config.paystackSecretKey}`,
       'Content-Type': 'application/json',

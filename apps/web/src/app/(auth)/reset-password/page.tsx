@@ -6,6 +6,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Lock, Loader2, Check, AlertCircle, KeyRound } from 'lucide-react';
+import { api } from '@/lib/api';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -42,20 +43,10 @@ function ResetPasswordForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword: password }),
-      });
-
-      if (response.ok) {
-        setSuccess(true);
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to reset password');
-      }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+      await api.post('/api/auth/reset-password', { token, newPassword: password });
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }

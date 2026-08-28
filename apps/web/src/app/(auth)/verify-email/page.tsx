@@ -29,7 +29,7 @@ function VerifyEmailForm() {
 
   const verifyEmail = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/auth/verify-email?token=${token}`);
+      const response = await fetch(`/api/auth/verify-email?token=${token}`);
 
       if (response.ok) {
         setSuccess(true);

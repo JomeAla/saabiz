@@ -4,13 +4,19 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Users, Package, DollarSign, Settings, LogOut, Shield, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, Package, DollarSign, Settings, LogOut, Shield, ChevronRight, Tag, CreditCard, ShieldAlert, Building2, Webhook } from 'lucide-react';
 
 const navItems = [
   { name: 'Dashboard', href: '/platform-admin/dashboard', icon: LayoutDashboard },
+  { name: 'Users', href: '/platform-admin/users', icon: Users },
   { name: 'Sellers', href: '/platform-admin/sellers', icon: Users },
   { name: 'Products', href: '/platform-admin/products', icon: Package },
+  { name: 'Tenants', href: '/platform-admin/tenants', icon: Building2 },
+  { name: 'Promotions', href: '/platform-admin/promotions', icon: Tag },
+  { name: 'Subscriptions', href: '/platform-admin/subscriptions', icon: CreditCard },
   { name: 'Payouts', href: '/platform-admin/payouts', icon: DollarSign },
+  { name: 'Webhooks', href: '/platform-admin/webhooks', icon: Webhook },
+  { name: 'Honeypots', href: '/platform-admin/honeypots', icon: ShieldAlert },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

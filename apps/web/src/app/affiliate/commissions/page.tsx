@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { DollarSign, Clock, Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface Commission {
   id: string;
@@ -47,11 +48,8 @@ export default function AffiliateCommissions() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/affiliates/commissions', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCommissions(await response.json());
+      const data = await api.get<Commission[]>('/api/affiliates/commissions');
+      setCommissions(data);
     } catch (error) {
       console.error('Failed to fetch commissions:', error);
     } finally {
@@ -59,7 +57,7 @@ export default function AffiliateCommissions() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'NGN') => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
   };
 

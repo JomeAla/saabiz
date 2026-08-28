@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Key, Clock, AlertTriangle, TrendingUp, Shield, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 
 interface Subscription {
   id: string;
@@ -61,32 +62,25 @@ export default function CustomerDashboard() {
     try {
       setError(null);
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         router.push('/login');
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/subscriptions/my-subscriptions', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        router.push('/login');
-        return;
+      try {
+        const data = await api.get<any>('/api/subscriptions/my-subscriptions');
+        setSubscriptions(data.subscriptions || []);
+        setLicenses(data.licenses || []);
+      } catch (err: any) {
+        if (err.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          router.push('/login');
+          return;
+        }
+        setError(err.message || 'Failed to load subscriptions');
       }
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        setError(data.message || 'Failed to load subscriptions');
-        return;
-      }
-
-      setSubscriptions(data.subscriptions || []);
-      setLicenses(data.licenses || []);
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error);
       setError('Failed to load data. Please try again.');
@@ -272,7 +266,7 @@ export default function CustomerDashboard() {
                             <div className="flex justify-between items-start">
                               <div>
                                 <h3 className="font-medium text-white">{sub.product.name}</h3>
-                                <p className="text-sm text-gray-500 mt-1">{sub.plan.name} — ${sub.plan.price}/{sub.plan.interval.toLowerCase()}</p>
+                                <p className="text-sm text-gray-500 mt-1">{sub.plan.name} — ₦{sub.plan.price}/{sub.plan.interval.toLowerCase()}</p>
                               </div>
                               <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                                 sub.status === 'ACTIVE' 

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { HoneypotsService } from '../honeypots/honeypots.service';
 
 export interface ActivationResult {
   success: boolean;
@@ -13,18 +14,93 @@ export interface ActivationResult {
   message?: string;
 }
 
+export interface ActivationContext {
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 @Injectable()
 export class ActivationsService {
   private readonly logger = new Logger(ActivationsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private honeypots: HoneypotsService,
+  ) {}
+
+  private async decoyResponse(
+    endpoint: string,
+    licenseKey: string,
+    machineId: string,
+    productId: string,
+    ctx: ActivationContext | undefined,
+    kind: 'activate' | 'deactivate' | 'status',
+  ): Promise<ActivationResult | null> {
+    const isDecoy = await this.honeypots.isDecoy(licenseKey, productId, {
+      endpoint,
+      machineId,
+      ipAddress: ctx?.ipAddress,
+      userAgent: ctx?.userAgent,
+    });
+    if (!isDecoy) return null;
+
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: { plans: true },
+    });
+    const maxActivations = product?.plans[0]?.maxActivations ?? 1;
+    const normalizedKey = licenseKey.toUpperCase().trim();
+
+    switch (kind) {
+      case 'activate':
+        return {
+          success: true,
+          licenseKey: normalizedKey,
+          machineId,
+          activations: 1,
+          maxActivations,
+          isActivated: true,
+          expiresAt: null,
+          productName: product?.name || 'Software Product',
+          message: 'License activated successfully',
+        };
+      case 'deactivate':
+        return {
+          success: true,
+          licenseKey: normalizedKey,
+          machineId,
+          activations: 0,
+          maxActivations,
+          isActivated: false,
+          expiresAt: null,
+          productName: product?.name || 'Software Product',
+          message: 'License deactivated successfully. You can now activate on a new machine.',
+        };
+      case 'status':
+        return {
+          success: true,
+          licenseKey: normalizedKey,
+          machineId,
+          activations: 1,
+          maxActivations,
+          isActivated: true,
+          expiresAt: null,
+          productName: product?.name || 'Software Product',
+          message: 'License is active on this machine',
+        };
+    }
+  }
 
   async activateLicense(
     licenseKey: string,
     machineId: string,
     productId: string,
+    ctx?: ActivationContext,
   ): Promise<ActivationResult> {
     const normalizedKey = licenseKey.toUpperCase().trim();
+
+    const decoy = await this.decoyResponse('activate', licenseKey, machineId, productId, ctx, 'activate');
+    if (decoy) return decoy;
 
     const license = await this.prisma.license.findUnique({
       where: { key: normalizedKey },
@@ -153,8 +229,12 @@ export class ActivationsService {
     licenseKey: string,
     machineId: string,
     productId: string,
+    ctx?: ActivationContext,
   ): Promise<ActivationResult> {
     const normalizedKey = licenseKey.toUpperCase().trim();
+
+    const decoy = await this.decoyResponse('deactivate', licenseKey, machineId, productId, ctx, 'deactivate');
+    if (decoy) return decoy;
 
     const license = await this.prisma.license.findUnique({
       where: { key: normalizedKey },
@@ -232,8 +312,12 @@ export class ActivationsService {
     licenseKey: string,
     machineId: string,
     productId: string,
+    ctx?: ActivationContext,
   ): Promise<ActivationResult> {
     const normalizedKey = licenseKey.toUpperCase().trim();
+
+    const decoy = await this.decoyResponse('status', licenseKey, machineId, productId, ctx, 'status');
+    if (decoy) return decoy;
 
     const license = await this.prisma.license.findUnique({
       where: { key: normalizedKey },

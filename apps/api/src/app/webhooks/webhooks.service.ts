@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaystackService } from '../payments/paystack.service';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { PrismaService } from '../prisma.service';
@@ -20,19 +20,167 @@ export class WebhooksService {
     private readonly affiliatesService: AffiliatesService,
   ) {}
 
-  async handlePaystackWebhook(signature: string, body: Buffer) {
-    const config = await this.prisma.platformConfig.findFirst();
-    if (!config?.paystackSecretKey) {
-      throw new Error('Paystack secret key not configured');
-    }
+  // ------------------------------------------------------------------
+  // Webhook event log (audit + replay)
+  // ------------------------------------------------------------------
 
-    const hash = crypto.createHmac('sha512', config.paystackSecretKey).update(body).digest('hex');
-    if (hash !== signature) {
+  async recordIncoming(
+    gateway: string,
+    eventName: string,
+    reference: string | undefined,
+    signature: string | null | undefined,
+    rawBody: string | null,
+    payload: any,
+  ) {
+    try {
+      const record = await this.prisma.webhookEvent.create({
+        data: {
+          gateway,
+          eventName,
+          reference: reference || null,
+          signature: signature || null,
+          rawBody,
+          payload: payload || {},
+          status: 'processing',
+        },
+      });
+      return record.id;
+    } catch (error) {
+      this.logger.error(`Failed to record incoming ${gateway} webhook`, error);
+      return null;
+    }
+  }
+
+  async markProcessed(id: string | null, status: string, configId?: string) {
+    if (!id) return;
+    await this.prisma.webhookEvent.update({
+      where: { id },
+      data: { status, configId: configId || null },
+    }).catch((e) => this.logger.error('Failed to update webhook event status', e));
+  }
+
+  async markFailed(id: string | null, error: string) {
+    if (!id) return;
+    await this.prisma.webhookEvent.update({
+      where: { id },
+      data: { status: 'failed', error: error || 'unknown error' },
+    }).catch((e) => this.logger.error('Failed to update webhook event status', e));
+  }
+
+  async listEvents(options?: { gateway?: string; status?: string; limit?: number }) {
+    const where: any = {};
+    if (options?.gateway) where.gateway = options.gateway;
+    if (options?.status) where.status = options.status;
+    return this.prisma.webhookEvent.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(options?.limit || 100, 1), 500),
+    });
+  }
+
+  /**
+   * Re-run a previously received webhook through the normal handler with the
+   * original signature/payload so gateway auth still passes.
+   */
+  async replayEvent(id: string) {
+    const event = await this.prisma.webhookEvent.findUnique({ where: { id } });
+    if (!event) throw new NotFoundException('Webhook event not found');
+
+    try {
+      let result: any;
+      if (event.gateway === 'paystack') {
+        const raw = Buffer.from(event.rawBody || JSON.stringify(event.payload));
+        result = await this.handlePaystackWebhook(event.signature || '', raw);
+      } else {
+        result = await this.handleFlutterwaveWebhook(event.signature || '', event.payload as any);
+      }
+      const status = (result as any)?.status || 'processed';
+      await this.prisma.webhookEvent.update({
+        where: { id },
+        data: { replayCount: { increment: 1 }, lastReplayAt: new Date(), lastReplayStatus: status },
+      });
+      return result;
+    } catch (error: any) {
+      await this.prisma.webhookEvent.update({
+        where: { id },
+        data: { replayCount: { increment: 1 }, lastReplayAt: new Date(), lastReplayStatus: 'failed' },
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Payment failure / dunning
+  // ------------------------------------------------------------------
+
+  private async handleSubscriptionPaymentFailure(subscriptionId: string, gateway: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      include: { product: true, plan: true },
+    });
+    if (!subscription) return;
+
+    const graceUntil = new Date();
+    graceUntil.setDate(graceUntil.getDate() + 7);
+
+    await this.prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        status: 'IN_GRACE_PERIOD',
+        paymentFailedAt: new Date(),
+        graceUntil,
+      },
+    });
+
+    await this.prisma.license.updateMany({
+      where: { subscriptionId },
+      data: { active: false },
+    });
+
+    this.notificationsService.sendPaymentFailedEmail(
+      subscription.customerEmail,
+      subscription.product.name,
+      subscription.plan.price,
+      graceUntil,
+    ).catch((err) => this.logger.error('Failed to send payment-failed email', err));
+
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'PAYMENT_FAILED',
+        resource: 'subscription',
+        resourceId: subscriptionId,
+        details: { gateway, productId: subscription.productId, graceUntil },
+        status: 'warning',
+      },
+    }).catch((e) => this.logger.error('Failed to write payment-failed audit log', e));
+
+    this.logger.warn(`Payment failed for subscription ${subscriptionId} (${gateway}) — grace until ${graceUntil.toISOString()}`);
+  }
+
+  async handlePaystackWebhook(signature: string, body: Buffer) {
+    const configs = await this.prisma.platformConfig.findMany({
+      where: { paystackSecretKey: { not: null } },
+    });
+    const config = configs.find(
+      (c) => c.paystackSecretKey && crypto.createHmac('sha512', c.paystackSecretKey).update(body).digest('hex') === signature
+    );
+    if (!config) {
       throw new BadRequestException('Invalid Paystack signature');
     }
 
     const event = JSON.parse(body.toString());
     this.logger.log(`Received Paystack event: ${event.event}`);
+
+    if (event.event === 'charge.failed' || event.event === 'invoice.payment_failed') {
+      const failedReference = event.data?.reference;
+      const failedTx = failedReference
+        ? await this.prisma.transaction.findUnique({ where: { reference: failedReference } })
+        : null;
+      if (failedTx?.subscriptionId) {
+        await this.handleSubscriptionPaymentFailure(failedTx.subscriptionId, 'paystack');
+      }
+      return { status: 'success', handled: 'payment_failed' };
+    }
 
     if (event.event === 'charge.success') {
       const { reference, amount, metadata, customer } = event.data;
@@ -142,7 +290,7 @@ export class WebhooksService {
       };
 
       if (subscriptionId) {
-        transactionData.subscriptionId = subscriptionId;
+        transactionData.subscription = { connect: { id: subscriptionId } };
       }
       if (affiliateId) {
         transactionData.affiliateId = affiliateId;
@@ -176,7 +324,7 @@ export class WebhooksService {
       };
 
       if (subscriptionId) {
-        licenseData.subscriptionId = subscriptionId;
+        licenseData.subscription = { connect: { id: subscriptionId } };
       }
 
       await this.prisma.license.create({
@@ -206,16 +354,26 @@ export class WebhooksService {
   }
 
   async handleFlutterwaveWebhook(signature: string, payload: any) {
-    const config = await this.prisma.platformConfig.findFirst();
-    if (!config?.webhookSecret) {
-      throw new Error('Flutterwave webhook secret not configured');
-    }
-
-    if (signature !== config.webhookSecret) {
+    const configs = await this.prisma.platformConfig.findMany({
+      where: { webhookSecret: { not: null } },
+    });
+    const config = configs.find((c) => c.webhookSecret && signature === c.webhookSecret);
+    if (!config) {
       throw new BadRequestException('Invalid Flutterwave signature');
     }
 
     this.logger.log(`Received Flutterwave event: ${payload.event}`);
+
+    if (payload.event === 'charge.failed' || payload.event === 'payment.failed') {
+      const failedRef = payload.data?.tx_ref || payload.data?.reference;
+      const failedTx = failedRef
+        ? await this.prisma.transaction.findUnique({ where: { reference: failedRef } })
+        : null;
+      if (failedTx?.subscriptionId) {
+        await this.handleSubscriptionPaymentFailure(failedTx.subscriptionId, 'flutterwave');
+      }
+      return { status: 'success', handled: 'payment_failed' };
+    }
 
     if (payload.event === 'charge.completed' && payload.data.status === 'successful') {
       const { tx_ref, amount, meta, customer } = payload.data;
@@ -324,7 +482,7 @@ export class WebhooksService {
       };
 
       if (subscriptionId) {
-        flutterwaveTransactionData.subscriptionId = subscriptionId;
+        flutterwaveTransactionData.subscription = { connect: { id: subscriptionId } };
       }
       if (affiliateId) {
         flutterwaveTransactionData.affiliateId = affiliateId;
@@ -358,7 +516,7 @@ export class WebhooksService {
       };
 
       if (subscriptionId) {
-        licenseData.subscriptionId = subscriptionId;
+        licenseData.subscription = { connect: { id: subscriptionId } };
       }
 
       await this.prisma.license.create({

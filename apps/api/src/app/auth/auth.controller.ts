@@ -14,8 +14,11 @@ export class AuthController {
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201, description: 'Seller registered successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - email already exists' })
-  async register(@Body(new ValidationPipe()) dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(@Body(new ValidationPipe()) dto: RegisterDto, @Request() req: any) {
+    return this.authService.register(dto, {
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Post('register-customer')
@@ -23,8 +26,11 @@ export class AuthController {
   @ApiBody({ type: CustomerRegisterDto })
   @ApiResponse({ status: 201, description: 'Customer registered successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - email already exists' })
-  async registerCustomer(@Body(new ValidationPipe()) dto: CustomerRegisterDto) {
-    return this.authService.registerCustomer(dto);
+  async registerCustomer(@Body(new ValidationPipe()) dto: CustomerRegisterDto, @Request() req: any) {
+    return this.authService.registerCustomer(dto, {
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Post('login')
@@ -54,8 +60,11 @@ export class AuthController {
     }
   })
   @ApiResponse({ status: 200, description: 'Password reset email sent' })
-  async forgotPassword(@Body(new ValidationPipe()) dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto.email);
+  async forgotPassword(@Body(new ValidationPipe()) dto: ForgotPasswordDto, @Request() req: any) {
+    return this.authService.forgotPassword(dto, {
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Post('reset-password')

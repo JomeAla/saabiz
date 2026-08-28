@@ -126,18 +126,51 @@ export class SaabizSDK {
   }
 
   async checkForUpdate(
+    key: string,
     productId: string,
     currentVersion: string
   ): Promise<UpdateCheckResult> {
     try {
-      const response = await this.client.post<UpdateCheckResult>(
+      const response = await this.client.post<UpdateCheckResult & { product?: { downloadUrl?: string } }>(
         `${this.apiUrl}/licenses/ota-check`,
-        { productId, currentVersion }
+        { licenseKey: key, productId, currentVersion }
+      );
+      const data = response.data;
+      return {
+        hasUpdate: !!data.hasUpdate,
+        latestVersion: data.latestVersion,
+        downloadUrl: data.downloadUrl || data.product?.downloadUrl || undefined,
+      };
+    } catch (error: any) {
+      return {
+        hasUpdate: false,
+      };
+    }
+  }
+
+  /**
+   * Validate a license for OTA context, including machine/domain metadata.
+   */
+  async otaValidate(
+    key: string,
+    productId: string,
+    options?: { machineId?: string; domain?: string }
+  ): Promise<LicenseValidationResult & { metadata?: any }> {
+    try {
+      const response = await this.client.post<LicenseValidationResult & { metadata?: any }>(
+        `${this.apiUrl}/licenses/ota-validate`,
+        {
+          licenseKey: key,
+          productId,
+          machineId: options?.machineId || this.machineId,
+          domain: options?.domain,
+        }
       );
       return response.data;
     } catch (error: any) {
       return {
-        hasUpdate: false,
+        valid: false,
+        reason: error.response?.data?.message || error.message || 'OTA validation failed',
       };
     }
   }
@@ -232,11 +265,9 @@ export class SaabizSDK {
     const machine = machineId || this.machineId;
     
     try {
-      const response = await this.client.get<ActivationResult>(
+      const response = await this.client.post<ActivationResult>(
         `${this.apiUrl}/licenses/status`,
-        { 
-          params: { licenseKey: key, productId, machineId: machine }
-        }
+        { licenseKey: key, productId, machineId: machine }
       );
       return response.data;
     } catch (error: any) {
@@ -268,6 +299,14 @@ export class SaabizSDK {
 
   async validate(key: string, productId: string): Promise<LicenseValidationResult> {
     return this.validateLicense(key, productId);
+  }
+
+  async checkUpdate(key: string, productId: string, currentVersion: string): Promise<UpdateCheckResult> {
+    return this.checkForUpdate(key, productId, currentVersion);
+  }
+
+  async status(key: string, productId: string, machineId?: string): Promise<ActivationResult> {
+    return this.getActivationStatus(key, productId, machineId);
   }
 }
 

@@ -12,6 +12,11 @@ export class RegisterDto {
   @IsNotEmpty()
   @IsString()
   businessName!: string;
+
+  // Invisible honeypot field for bots — humans never fill it.
+  @IsOptional()
+  @IsString()
+  website?: string;
 }
 
 export class CustomerRegisterDto {
@@ -22,6 +27,11 @@ export class CustomerRegisterDto {
   @IsString()
   @MinLength(6)
   password!: string;
+
+  // Invisible honeypot field for bots — humans never fill it.
+  @IsOptional()
+  @IsString()
+  website?: string;
 }
 
 export class LoginDto {
@@ -36,6 +46,11 @@ export class LoginDto {
 export class ForgotPasswordDto {
   @IsEmail()
   email!: string;
+
+  // Invisible honeypot field for bots — humans never fill it.
+  @IsOptional()
+  @IsString()
+  website?: string;
 }
 
 export class ResetPasswordDto {

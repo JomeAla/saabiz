@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Loader2, Key, CheckCircle2, XCircle, Search, Calendar, Ticket, Sparkles } from 'lucide-react';
+import { Users, Loader2, Key, CheckCircle2, XCircle, Search, Calendar, Ticket, Sparkles, MonitorSmartphone, Ban, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Subscriber {
@@ -9,6 +9,10 @@ interface Subscriber {
   key: string;
   active: boolean;
   expiresAt: string | null;
+  buyerEmail: string | null;
+  machineId: string | null;
+  activations: number;
+  maxActivations: number;
   product: { name: string };
   transaction: { reference: string, amount: number, gateway: string, plan: { name: string, interval: string } } | null;
 }
@@ -36,10 +40,33 @@ export default function SubscribersManager() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedGateway, setSelectedGateway] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubscribers();
   }, []);
+
+  const performAction = async (sub: Subscriber, action: 'revoke' | 'reactivate') => {
+    setActionId(sub.id);
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch(`/api/licenses/${action}/${sub.id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || `Failed to ${action} license`);
+        setActionId(null);
+        return;
+      }
+      await fetchSubscribers();
+    } catch (err: any) {
+      setError(`Failed to ${action} license: ${err.message || 'network error'}`);
+    } finally {
+      setActionId(null);
+    }
+  };
 
   const fetchSubscribers = async () => {
     setLoading(true);
@@ -175,8 +202,10 @@ export default function SubscribersManager() {
                   <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">License Key</th>
                   <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Product & Plan</th>
                   <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em] hidden lg:table-cell">Transaction</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Activation</th>
                   <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Expiration</th>
                   <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Status</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-[0.15em]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -209,7 +238,7 @@ export default function SubscribersManager() {
                       <td className="px-6 py-4 hidden lg:table-cell">
                         {sub.transaction ? (
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-white">${sub.transaction.amount?.toFixed(2)}</span>
+                            <span className="text-sm font-bold text-white">₦{sub.transaction.amount?.toFixed(2)}</span>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] font-mono text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">
                                 {sub.transaction.gateway}
@@ -224,6 +253,23 @@ export default function SubscribersManager() {
                         )}
                       </td>
                       <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <MonitorSmartphone className={`w-3.5 h-3.5 ${sub.machineId ? 'text-emerald-400' : 'text-gray-600'}`} />
+                            <span className="text-sm font-medium text-white">
+                              {sub.activations || 0}<span className="text-gray-500"> / {sub.maxActivations === 0 ? '∞' : sub.maxActivations}</span>
+                            </span>
+                          </div>
+                          {sub.machineId ? (
+                            <span className="text-[11px] font-mono text-gray-500 mt-0.5 truncate max-w-[140px]" title={sub.machineId}>
+                              {sub.machineId.substring(0, 24)}...
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-600 mt-0.5">No machine activated</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
                         <span className="text-sm font-medium text-gray-400">
                           {sub.expiresAt ? new Date(sub.expiresAt).toLocaleDateString() : 'Lifetime'}
                         </span>
@@ -234,13 +280,36 @@ export default function SubscribersManager() {
                           {status.label}
                         </span>
                       </td>
+                      <td className="px-6 py-4">
+                        {sub.active ? (
+                          <button
+                            onClick={() => performAction(sub, 'revoke')}
+                            disabled={actionId === sub.id}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all disabled:opacity-50"
+                            title="Revoke license and clear its machine"
+                          >
+                            {actionId === sub.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+                            Revoke
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => performAction(sub, 'reactivate')}
+                            disabled={actionId === sub.id}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+                            title="Reactivate license"
+                          >
+                            {actionId === sub.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                            Reactivate
+                          </button>
+                        )}
+                      </td>
                     </motion.tr>
                   );
                 })}
                 
                 {filteredSubscribers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <Search className="w-8 h-8 text-gray-700 mb-3" />
                         <p className="text-gray-500">No subscribers found matching your search.</p>

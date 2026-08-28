@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DollarSign, Check, X, Clock, TrendingUp, ArrowUpRight, Wallet } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
+import { api } from '@/lib/api';
 
 interface Payout {
   sellerId: string;
@@ -41,16 +42,7 @@ export default function AdminPayouts() {
 
   const fetchPayouts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/payouts', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        console.error('Failed to fetch payouts:', response.status);
-        setLoading(false);
-        return;
-      }
-      const data = await response.json();
+      const data = await api.get<Payout[]>('/api/admin/payouts');
       setPayouts(data);
     } catch (error) {
       console.error('Failed to fetch payouts:', error);
@@ -64,22 +56,9 @@ export default function AdminPayouts() {
 
     setProcessing(sellerId);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/payouts', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ sellerId, action, amount }),
-      });
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: `Payout ${action}ed successfully` });
-        fetchPayouts();
-      } else {
-        setMessage({ type: 'error', text: 'Failed to process payout' });
-      }
+      await api.post('/api/admin/payouts', { sellerId, action, amount });
+      setMessage({ type: 'success', text: `Payout ${action}ed successfully` });
+      fetchPayouts();
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to process payout' });
     } finally {
@@ -88,7 +67,7 @@ export default function AdminPayouts() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'NGN' }).format(amount || 0);
   };
 
   const totalAvailable = payouts.reduce((sum, p) => sum + p.availableForPayout, 0);

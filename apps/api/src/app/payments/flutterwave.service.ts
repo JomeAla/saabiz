@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { TenantService } from '../tenancy/tenant.service';
 import axios from 'axios';
 
 @Injectable()
@@ -7,11 +8,24 @@ export class FlutterwaveService {
   private readonly logger = new Logger(FlutterwaveService.name);
   private readonly baseUrl = 'https://api.flutterwave.com/v3';
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tenantService: TenantService
+  ) {}
 
   private async getHeaders() {
-    const config = await this.prisma.platformConfig.findFirst();
-
+    const tenantId = this.tenantService.scopeTenantId();
+    if (tenantId) {
+      const tenantConfig = await this.prisma.platformConfig.findFirst({ where: { tenantId } });
+      if (tenantConfig?.flutterwaveSecretKey) {
+        return {
+          Authorization: `Bearer ${tenantConfig.flutterwaveSecretKey}`,
+          'Content-Type': 'application/json',
+        };
+      }
+    }
+    const platformConfig = await this.prisma.platformConfig.findFirst({ where: { tenantId: null } });
+    const config = platformConfig ?? (await this.prisma.platformConfig.findFirst());
     if (!config?.flutterwaveSecretKey) {
       throw new Error('Flutterwave secret key not configured');
     }
@@ -46,7 +60,7 @@ export class FlutterwaveService {
           tx_ref,
           amount,
           currency: 'NGN',
-          redirect_url: 'http://localhost:4200/payment-status',
+          redirect_url: `${this.tenantService.frontendUrl()}/checkout?productId=${productId}&planId=${planId}`,
           customer: {
             email,
             name: customer_name,

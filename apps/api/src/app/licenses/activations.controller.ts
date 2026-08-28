@@ -45,6 +45,7 @@ export class ActivationsController {
       dto.licenseKey,
       dto.machineId,
       dto.productId,
+      { ipAddress: req.ip, userAgent: req.headers?.['user-agent'] },
     );
   }
 
@@ -83,6 +84,7 @@ export class ActivationsController {
       dto.licenseKey,
       dto.machineId,
       dto.productId,
+      { ipAddress: req.ip, userAgent: req.headers?.['user-agent'] },
     );
   }
 
@@ -114,7 +116,11 @@ export class ActivationsController {
     @Body('licenseKey') licenseKey: string,
     @Body('machineId') machineId: string,
     @Body('productId') productId: string,
+    @Request() req: any,
   ): Promise<ActivationResult> {
-    return this.activationsService.getActivationStatus(licenseKey, machineId, productId);
+    return this.activationsService.getActivationStatus(licenseKey, machineId, productId, {
+      ipAddress: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 }

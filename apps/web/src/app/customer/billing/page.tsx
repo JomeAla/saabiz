@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { CreditCard, Download, FileText, Plus, Loader2, ExternalLink, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 
 const container = {
   hidden: { opacity: 0 },
@@ -48,16 +49,7 @@ export default function CustomerBilling() {
     setError(null);
     try {
       const token = localStorage.getItem('token') || '';
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/invoices/my-invoices`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to fetch invoices');
-      }
-      
-      const data = await res.json();
+      const data = await api.get<Invoice[]>('/api/invoices/my-invoices');
       setInvoices(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Failed to load invoices');
@@ -70,12 +62,9 @@ export default function CustomerBilling() {
     setDownloading(invoiceId);
     try {
       const token = localStorage.getItem('token') || '';
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/invoices/${invoiceId}/${format}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`/api/invoices/${invoiceId}/${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       
       if (res.ok) {
         const blob = await res.blob();
@@ -245,7 +234,7 @@ export default function CustomerBilling() {
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="font-bold text-white">
-                            {invoice.currency} {invoice.total.toFixed(2)}
+                            ₦{invoice.total.toFixed(2)}
                           </span>
                           <div className="flex items-center gap-2">
                             <button
@@ -262,7 +251,7 @@ export default function CustomerBilling() {
                             </button>
                             <button
                               onClick={() => window.open(
-                                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/invoices/${invoice.id}/html`,
+                                `/api/invoices/${invoice.id}/html`,
                                 '_blank'
                               )}
                               className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"

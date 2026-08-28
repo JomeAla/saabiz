@@ -58,3 +58,9 @@ nul
 .env
 .env.local
 .env.*.local
+
+# Database backups & test artifacts
+backups/
+test-results/
+playwright-report/
+tw_test2.css
